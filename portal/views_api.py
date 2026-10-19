@@ -70,7 +70,7 @@ def init_app(app):
         if not assistant.ai_configured():
             return jsonify(assistant.answer_offline(history, body.get("context")))
         try:
-            return jsonify(assistant.answer_with_claude(history, body.get("context")))
+            return jsonify(assistant.answer_with_gemini(history, body.get("context")))
         except Exception:
             current_app.logger.exception("assistant request failed")
             fallback = assistant.answer_offline(history)

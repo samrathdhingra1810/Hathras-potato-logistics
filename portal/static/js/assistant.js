@@ -61,7 +61,7 @@
   }
 
   function setMode(mode) {
-    modeEl.textContent = mode === 'ai' ? 'AI · uses ColdFlow data' : mode === 'offline' ? 'Offline help' : 'Ready';
+    modeEl.textContent = mode === 'ai' ? 'Gemini · uses ColdFlow data' : mode === 'offline' ? 'Offline help' : 'Ready';
     modeEl.dataset.state = mode || '';
   }
 

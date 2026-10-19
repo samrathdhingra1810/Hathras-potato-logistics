@@ -64,7 +64,7 @@ The district area, production and yield series (2018-19 to 2023-24) is as suppli
 
 ## AI assistant
 
-The ✦ Ask ColdFlow panel (on every page, plus the home page's ask bar and ⌘K palette) calls `POST /api/assistant`. With `ANTHROPIC_API_KEY` set, it uses Claude (`claude-opus-5-5`, low effort, server-side refusal fallback) with three tools that run ColdFlow's own engine: Hathras overview, Hathras what-if scenarios, and analysis of any seasons (including the plan on screen). Without a key it answers common questions from built-in rules and labels itself "Offline help". Requests are capped at 20 per 10 minutes per IP per server instance.
+The ✦ Ask ColdFlow panel (on every page, plus the home page's ask bar and ⌘K palette) calls `POST /api/assistant`. With `GEMINI_API_KEY` set as an environment variable, it uses Google Gemini (`gemini-3.8-flash`; override with `GEMINI_MODEL`) with three function tools that run ColdFlow's own engine: Hathras overview, Hathras what-if scenarios, and analysis of any seasons (including the plan on screen). Without a key it answers common questions from built-in rules and labels itself "Offline help". Requests are capped at 20 per 10 minutes per IP per server instance. Never commit the key; set it in Vercel → Settings → Environment Variables.
 
 ## Accounts in production
 

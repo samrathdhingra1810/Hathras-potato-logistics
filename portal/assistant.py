@@ -1,4 +1,4 @@
-"""ColdFlow Assistant: Claude with tools that call the ColdFlow engine.
+"""ColdFlow Assistant: Gemini with tools that call the ColdFlow engine.
 
 When no API credential is configured, a small built-in help responder answers
 common questions so the assistant still works (marked as offline in the UI).
@@ -17,7 +17,7 @@ from .core.analytics import forecast_series, summary, with_yoy
 from .core.custom import InputError, analyse
 from .scenario import hathras_scenario
 
-MODEL = "claude-opus-5-5"
+MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
 MAX_TURNS = 16            # messages kept from the client-side history
 MAX_MESSAGE_CHARS = 2000
 MAX_TOOL_ROUNDS = 5
@@ -40,7 +40,6 @@ TOOLS = [
         "name": "get_hathras_overview",
         "description": "Hathras district potato data: the six-season area/production/yield series with YoY change, growth rates, the two-season forecast with 95% intervals, and the default storage outlook. Use for any question about Hathras figures or trends.",
         "input_schema": {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
-        "strict": True,
     },
     {
         "name": "run_hathras_storage_scenario",
@@ -56,7 +55,6 @@ TOOLS = [
             "required": ["season", "capacity_t", "storage_share", "alert_threshold"],
             "additionalProperties": False,
         },
-        "strict": True,
     },
     {
         "name": "analyse_seasons",
@@ -85,7 +83,6 @@ TOOLS = [
             "required": ["name", "seasons", "capacity_t", "storage_share", "alert_threshold"],
             "additionalProperties": False,
         },
-        "strict": True,
     },
 ]
 
@@ -245,44 +242,68 @@ def allow(key: str) -> bool:
 # ---------------------------------------------------------------- answering
 
 def ai_configured() -> bool:
-    return bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"))
+    return bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
 
 
-def answer_with_claude(history: list[dict], ctx, client=None) -> dict:
-    import anthropic
+def _strip(schema):
+    """JSON Schema without keys Gemini's function declarations don't need."""
+    if isinstance(schema, dict):
+        return {k: _strip(v) for k, v in schema.items() if k != "additionalProperties"}
+    if isinstance(schema, list):
+        return [_strip(v) for v in schema]
+    return schema
 
-    client = client or anthropic.Anthropic(max_retries=2, timeout=60.0)
-    messages = [dict(m) for m in history]
-    messages[-1] = {"role": "user", "content": context_block(ctx) + messages[-1]["content"]}
+
+def gemini_tools(types):
+    return [types.Tool(function_declarations=[
+        types.FunctionDeclaration(name=t["name"], description=t["description"],
+                                  parameters_json_schema=_strip(t["input_schema"]))
+        for t in TOOLS
+    ])]
+
+
+def answer_with_gemini(history: list[dict], ctx, client=None) -> dict:
+    from google import genai
+    from google.genai import types
+
+    # The SDK reads GEMINI_API_KEY (or GOOGLE_API_KEY) from the environment.
+    client = client or genai.Client()
+    contents = []
+    for i, m in enumerate(history):
+        text = (context_block(ctx) + m["content"]) if i == len(history) - 1 else m["content"]
+        contents.append(types.Content(role="user" if m["role"] == "user" else "model",
+                                      parts=[types.Part.from_text(text=text)]))
+    config = types.GenerateContentConfig(
+        system_instruction=SYSTEM_PROMPT,
+        tools=gemini_tools(types),
+        max_output_tokens=4096,
+        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+    )
     tools_used = []
 
     for _ in range(MAX_TOOL_ROUNDS + 1):
-        response = client.beta.messages.create(
-            model=MODEL,
-            max_tokens=8000,
-            system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
-            tools=TOOLS,
-            messages=messages,
-            output_config={"effort": "low"},  # conversational route: fast replies
-            betas=["server-side-fallback-2026-07-01"],
-            fallbacks="default",
-        )
-        if response.stop_reason == "refusal":
+        response = client.models.generate_content(model=MODEL, contents=contents, config=config)
+        candidate = (response.candidates or [None])[0]
+        if candidate is None or candidate.content is None:
             return {"reply": "I can't help with that one. Try asking about storage capacity, forecasts, or your plan.",
                     "mode": "ai", "tools": tools_used}
-        tool_blocks = [b for b in response.content if b.type == "tool_use"]
-        if response.stop_reason != "tool_use" or not tool_blocks:
-            text = "\n\n".join(b.text for b in response.content if b.type == "text").strip()
-            if response.stop_reason == "max_tokens" and text:
+        calls = response.function_calls or []
+        if not calls:
+            text = (response.text or "").strip()
+            reason = str(getattr(candidate, "finish_reason", "") or "")
+            if "MAX_TOKENS" in reason and text:
                 text += "\n\n…(answer cut short, ask me to continue)"
             return {"reply": text or "I don't have an answer for that.", "mode": "ai", "tools": tools_used}
-        messages.append({"role": "assistant", "content": response.content})
-        results = []
-        for b in tool_blocks:
-            content, is_error = run_tool(b.name, b.input)
-            tools_used.append(b.name)
-            results.append({"type": "tool_result", "tool_use_id": b.id, "content": content, "is_error": is_error})
-        messages.append({"role": "user", "content": results})
+        # Pass the model turn back unchanged: it carries Gemini's thought signatures.
+        contents.append(candidate.content)
+        parts = []
+        for fc in calls:
+            content, is_error = run_tool(fc.name, dict(fc.args or {}))
+            tools_used.append(fc.name)
+            result = json.loads(content)
+            parts.append(types.Part(function_response=types.FunctionResponse(
+                id=fc.id, name=fc.name, response={"error": result} if is_error else {"result": result})))
+        contents.append(types.Content(role="user", parts=parts))
     return {"reply": "That needed more steps than I can take in one go. Try a narrower question.", "mode": "ai",
             "tools": tools_used}
 
