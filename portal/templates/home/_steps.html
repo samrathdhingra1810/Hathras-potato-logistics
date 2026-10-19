@@ -1,0 +1,16 @@
+<section aria-labelledby="cf-how" class="pb-8">
+  <h2 id="cf-how" class="text-3xl font-bold text-white text-center tracking-tight px-4 mb-0">How ColdFlow works</h2>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto my-16 px-4">
+    {% for no, title, body in [
+      ('01', 'Yield analytics', 'Aggregate multi-season harvest baselines and forecast the next two seasons, with yield-shock what-ifs.'),
+      ('02', 'Spatial mapping', "Match each block's harvest against its local cold storage capacity, month by month through the loading peak."),
+      ('03', 'Capacity redistribution', 'Route excess harvest to the nearest blocks with spare space, with the distance to each shown.'),
+    ] %}
+    <div class="bg-slate-900/40 rounded-2xl p-6 border border-slate-800 transition-all duration-200 hover:-translate-y-1 hover:border-slate-700">
+      <div class="text-xs font-bold text-blue-400 tracking-wider uppercase mb-2">Step {{ no }}</div>
+      <h3 class="text-lg font-bold text-white mb-2">{{ title }}</h3>
+      <p class="text-sm text-slate-400 leading-relaxed m-0">{{ body }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>

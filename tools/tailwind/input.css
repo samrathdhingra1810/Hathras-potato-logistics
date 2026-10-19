@@ -1,0 +1,4 @@
+/* Tailwind's preflight border reset, scoped to the home page so `border` utilities draw. */
+.tw *, .tw *::before, .tw *::after { border-width: 0; border-style: solid; border-color: #e5e7eb; }
+
+@tailwind utilities;

@@ -770,3 +770,12 @@ html.is-offline .nav::after {
   content: "Offline · showing saved figures"; position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
   background: var(--status-warning); color: #1a1300; font: 700 0.74rem var(--font); padding: 3px 12px; border-radius: 0 0 8px 8px;
 }
+
+/* Tailwind home: the footer sits directly under the dark page. */
+body.home-tw .footer { margin-top: 0; }
+/* Dark nav on the dark home page (light and dark theme alike). */
+body.home-tw .nav {
+  --surface: #0f172a; --surface-2: #1e293b; --ink: #f1f5f9; --ink-2: #cbd5e1; --ink-muted: #94a3b8; --line: #1e293b;
+  background: rgba(2, 6, 23, 0.92); border-bottom-color: #1e293b; color-scheme: dark;
+}
+body.home-tw .nav .wordmark { color: #f1f5f9; }
