@@ -1,4 +1,4 @@
-// Site chrome: theme toggle, mobile menu, Tools dropdown on touch.
+// Site chrome: theme toggle, mobile menu, dropdowns, flash dismiss, password reveal.
 (function () {
   var root = document.documentElement;
 
@@ -45,6 +45,27 @@
     document.querySelectorAll('.has-dropdown.open').forEach(function (li) {
       li.classList.remove('open');
       li.querySelector('[data-dropdown]').setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  // Landing: solid nav once the splash scrolls away.
+  if (document.body.classList.contains('landing') && nav) {
+    var onScroll = function () { nav.classList.toggle('scrolled', window.scrollY > 40); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+
+  document.querySelectorAll('[data-dismiss]').forEach(function (btn) {
+    btn.addEventListener('click', function () { btn.parentElement.remove(); });
+  });
+
+  document.querySelectorAll('[data-pw-toggle]').forEach(function (btn) {
+    var input = document.getElementById(btn.getAttribute('data-pw-toggle'));
+    btn.addEventListener('click', function () {
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.textContent = show ? 'Hide' : 'Show';
+      btn.setAttribute('aria-pressed', String(show));
     });
   });
 })();

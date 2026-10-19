@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% import "macros.html" as m with context %}
-{% block title %}Harvest forecast · {{ site_name }}{% endblock %}
+{% block title %}Harvest forecast · Hathras · ColdFlow{% endblock %}
 
 {% block content %}
 {% set rows = forecast.rows %}{% set models = forecast.models %}
 <section class="page-head">
   <div class="container">
-    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / <a href="{{ url_for('tools') }}">Tools</a> / Forecast</div>
+    <div class="crumbs"><a href="{{ url_for('hathras') }}">Hathras</a> / <a href="{{ url_for('tools') }}">Tools</a> / Forecast</div>
     <h1>Harvest forecast</h1>
     <p class="lead" style="max-width:720px">Where the trend puts {{ district.name }}'s potato crop in {{ rows[0].season }} and {{ rows[1].season }}, and how sure we can be.</p>
   </div>

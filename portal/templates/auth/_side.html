@@ -1,0 +1,14 @@
+<aside class="auth-side">
+  <div>
+    <a class="brand" href="{{ url_for('home') }}" style="color:#fff"><img src="{{ url_for('static', filename='img/mark.svg') }}" alt="" width="32" height="32"><span class="wordmark" style="color:#fff">ColdFlow</span></a>
+  </div>
+  <div>
+    <h2>{{ heading }}</h2>
+    <ul class="check-list">
+      <li>Save plans for each district or cold store</li>
+      <li>Update figures every season and compare outlooks</li>
+      <li>Forecasts, deficit alerts and calendars in one place</li>
+    </ul>
+  </div>
+  <p class="small" style="margin:0">Your data stays in your account. We never sell it. <a href="{{ url_for('privacy') }}" style="color:#fff;text-decoration:underline">Privacy</a></p>
+</aside>

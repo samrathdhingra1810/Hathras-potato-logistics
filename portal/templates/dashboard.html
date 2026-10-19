@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · ColdFlow{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="container plan-banner">
+    <div>
+      <div class="crumbs">Dashboard</div>
+      <h1>Hello, {{ g.user.name.split()[0] }}</h1>
+      <p class="lead" style="margin:0">{% if g.user.organisation %}{{ g.user.organisation }} · {% endif %}{{ plans|length }} saved plan{{ '' if plans|length == 1 else 's' }}</p>
+    </div>
+    <a class="btn btn-primary" href="{{ url_for('plan') }}">+ New plan</a>
+  </div>
+</section>
+<div class="container stack">
+  <div class="card">
+    <div class="card-head"><div><h2>Your plans</h2><p>Most recently updated first</p></div></div>
+    {% if plans %}
+      {% for p in plans %}
+      <div class="plan-row">
+        <div>
+          <strong><a href="{{ url_for('plan', plan=p.id) }}">{{ p.name }}</a></strong>
+          <div class="xs muted">Updated {{ p.updated_at[:10] }} · created {{ p.created_at[:10] }}</div>
+        </div>
+        <div class="plan-actions">
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('plan', plan=p.id) }}">Open</a>
+          <form method="post" action="{{ url_for('plan_delete', plan_id=p.id) }}" data-confirm="Delete “{{ p.name }}”? This can’t be undone." onsubmit="return confirm(this.dataset.confirm)">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-ghost btn-sm" type="submit">Delete</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">
+        <h3>No plans yet</h3>
+        <p>Start from the Hathras example or enter your own seasons, then press <strong>Save plan</strong>.</p>
+        <a class="btn btn-primary" href="{{ url_for('plan') }}">Create your first plan</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="grid grid-3">
+    <a class="card card-link feature" href="{{ url_for('plan') }}"><h3>Plan your data</h3><p>Forecast and storage outlook for any district or facility.</p><span class="go">Open →</span></a>
+    <a class="card card-link feature" href="{{ url_for('hathras') }}"><h3>Hathras example</h3><p>The full district dashboard with every tool.</p><span class="go">Open →</span></a>
+    <a class="card card-link feature" href="{{ url_for('account') }}"><h3>Account settings</h3><p>Update your profile, change password or delete your account.</p><span class="go">Open →</span></a>
+  </div>
+</div>
+{% endblock %}

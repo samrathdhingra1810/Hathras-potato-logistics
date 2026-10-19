@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% import "macros.html" as m with context %}
-{% block title %}Cold storage capacity planner · {{ site_name }}{% endblock %}
+{% block title %}Cold storage capacity planner · Hathras · ColdFlow{% endblock %}
 
 {% block content %}
 {% set s = scenario %}{% set sim = s.simulation %}{% set i = s.inputs %}
 <section class="page-head">
   <div class="container">
-    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / <a href="{{ url_for('tools') }}">Tools</a> / Capacity planner</div>
+    <div class="crumbs"><a href="{{ url_for('hathras') }}">Hathras</a> / <a href="{{ url_for('tools') }}">Tools</a> / Capacity planner</div>
     <h1>Cold storage capacity planner</h1>
     <p class="lead" style="max-width:760px">Load the season's harvest into the district's cold stores month by month and see where capacity runs out. Change the inputs; the link updates so you can share your scenario.</p>
   </div>

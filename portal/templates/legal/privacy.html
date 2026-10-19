@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Privacy policy · ColdFlow{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / Privacy</div>
+    <h1>Privacy policy</h1>
+    <p class="muted">Last updated 19 October 2026</p>
+  </div>
+</section>
+<div class="container">
+  <div class="prose">
+    <h2 style="margin-top:0">What we collect</h2>
+    <ul>
+      <li><strong>Account details</strong>: when you create an account, your name, email address and (optionally) organisation. Your password is stored only as a one-way hash; we can't read it.</li>
+      <li><strong>Saved plans</strong>: the seasons, capacity and calendar figures you choose to save.</li>
+      <li><strong>Session cookie</strong>: one essential cookie keeps you logged in and protects forms against forgery. We don't use advertising or tracking cookies.</li>
+    </ul>
+    <h2>What we don't collect</h2>
+    <p>Figures you enter on the planner without saving are sent to our server only to calculate results and are not stored. Share links keep your figures inside the link itself.</p>
+    <h2>How we use it</h2>
+    <p>To run your account, show your saved plans, and keep the service secure. We don't sell or rent your data, and we don't share it except with the hosting and database providers that run ColdFlow, or where the law requires.</p>
+    <h2>Your choices</h2>
+    <p>You can edit your profile, delete individual plans, or delete your account and all saved plans at any time from <a href="{{ url_for('account') if accounts_enabled else url_for('home') }}">Account settings</a>. Deletion is immediate and permanent.</p>
+    <h2>Contact</h2>
+    <p>Questions about privacy can be sent to the ColdFlow team through the contact details published on this site.</p>
+  </div>
+</div>
+{% endblock %}

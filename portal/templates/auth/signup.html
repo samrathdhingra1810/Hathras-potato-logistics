@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Create account · ColdFlow{% endblock %}
+{% block footer %}{% endblock %}
+{% macro err(name) %}{% if errors.get(name) %}<div class="field-error" id="{{ name }}-err">{{ errors[name] }}</div>{% endif %}{% endmacro %}
+{% macro inv(name) %}{% if errors.get(name) %}aria-invalid="true" aria-describedby="{{ name }}-err"{% endif %}{% endmacro %}
+{% block content %}
+<div class="auth-wrap">
+  {% with heading = "Plan every harvest with the storage it needs." %}{% include "auth/_side.html" %}{% endwith %}
+  <div class="auth-main">
+    <div class="auth-card">
+      <h1>Create your account</h1>
+      <p class="muted" style="margin-bottom:24px">Already have one? <a href="{{ url_for('login', next=request.args.get('next')) }}">Log in</a></p>
+      <form method="post" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-field">
+          <label for="name">Full name</label>
+          <input class="input-text" id="name" name="name" autocomplete="name" required maxlength="80" value="{{ form.name }}" {{ inv('name') }}>
+          {{ err('name') }}
+        </div>
+        <div class="form-field">
+          <label for="email">Email</label>
+          <input class="input-text" id="email" name="email" type="email" autocomplete="email" required value="{{ form.email }}" {{ inv('email') }}>
+          {{ err('email') }}
+        </div>
+        <div class="form-field">
+          <label for="organisation">Organisation <span class="opt">(optional)</span></label>
+          <input class="input-text" id="organisation" name="organisation" autocomplete="organization" maxlength="120" value="{{ form.organisation }}" placeholder="Cold store, FPO, trading firm…" {{ inv('organisation') }}>
+          {{ err('organisation') }}
+        </div>
+        <div class="form-field">
+          <label for="password">Password</label>
+          <div class="pw-wrap">
+            <input class="input-text" id="password" name="password" type="password" autocomplete="new-password" required minlength="8" {{ inv('password') }}>
+            <button class="pw-toggle" type="button" data-pw-toggle="password" aria-pressed="false" aria-label="Show password">Show</button>
+          </div>
+          {% if errors.get('password') %}{{ err('password') }}{% else %}<div class="small muted" style="margin-top:5px">At least 8 characters.</div>{% endif %}
+        </div>
+        <div class="form-field">
+          <label for="confirm">Confirm password</label>
+          <input class="input-text" id="confirm" name="confirm" type="password" autocomplete="new-password" required {{ inv('confirm') }}>
+          {{ err('confirm') }}
+        </div>
+        <div class="form-field">
+          <label class="check-row"><input type="checkbox" name="terms" value="1" {{ inv('terms') }}> I agree to the <a href="{{ url_for('terms') }}" target="_blank">Terms</a> and <a href="{{ url_for('privacy') }}" target="_blank">Privacy policy</a>.</label>
+          {{ err('terms') }}
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Create account</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

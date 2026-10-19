@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Account settings · ColdFlow{% endblock %}
+{% macro err(name) %}{% if errors.get(name) %}<div class="field-error">{{ errors[name] }}</div>{% endif %}{% endmacro %}
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <div class="crumbs"><a href="{{ url_for('dashboard') }}">Dashboard</a> / Account</div>
+    <h1>Account settings</h1>
+    <p class="lead" style="margin:0">Signed in as {{ g.user.email }} · member since {{ g.user.created_at[:10] }}</p>
+  </div>
+</section>
+<div class="container" style="max-width:760px">
+  <div class="stack">
+    <form class="card" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="profile">
+      <div class="card-head"><div><h2>Profile</h2><p>Shown on your dashboard</p></div></div>
+      <div class="card-body">
+        <div class="form-field">
+          <label for="name">Full name</label>
+          <input class="input-text" id="name" name="name" maxlength="80" required value="{{ request.form.get('name', g.user.name) if action == 'profile' else g.user.name }}">
+          {{ err('name') }}
+        </div>
+        <div class="form-field">
+          <label for="organisation">Organisation <span class="opt">(optional)</span></label>
+          <input class="input-text" id="organisation" name="organisation" maxlength="120" value="{{ request.form.get('organisation', g.user.organisation) if action == 'profile' else g.user.organisation }}">
+          {{ err('organisation') }}
+        </div>
+        <div class="form-field">
+          <label for="email-ro">Email</label>
+          <input class="input-text" id="email-ro" value="{{ g.user.email }}" disabled>
+        </div>
+        <button class="btn btn-primary" type="submit">Save profile</button>
+      </div>
+    </form>
+
+    <form class="card" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="password">
+      <div class="card-head"><div><h2>Change password</h2><p>At least 8 characters</p></div></div>
+      <div class="card-body">
+        <div class="form-field">
+          <label for="current_password">Current password</label>
+          <input class="input-text" id="current_password" name="current_password" type="password" autocomplete="current-password" required>
+          {{ err('current_password') }}
+        </div>
+        <div class="form-field">
+          <label for="new_password">New password</label>
+          <input class="input-text" id="new_password" name="new_password" type="password" autocomplete="new-password" required minlength="8">
+          {{ err('new_password') }}
+        </div>
+        <div class="form-field">
+          <label for="confirm">Confirm new password</label>
+          <input class="input-text" id="confirm" name="confirm" type="password" autocomplete="new-password" required>
+          {{ err('confirm') }}
+        </div>
+        <button class="btn btn-primary" type="submit">Change password</button>
+      </div>
+    </form>
+
+    <form class="card" method="post" onsubmit="return confirm('Delete your account and all saved plans? This can’t be undone.')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="delete">
+      <div class="card-head"><div><h2>Delete account</h2><p>Permanently removes your account and every saved plan</p></div></div>
+      <div class="card-body">
+        <div class="form-field">
+          <label for="delete_password">Enter your password to confirm</label>
+          <input class="input-text" id="delete_password" name="delete_password" type="password" autocomplete="current-password" required>
+          {{ err('delete_password') }}
+        </div>
+        <button class="btn btn-danger" type="submit">Delete my account</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

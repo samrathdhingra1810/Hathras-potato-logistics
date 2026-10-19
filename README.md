@@ -1,6 +1,6 @@
-# Hathras Potato Logistics
+# ColdFlow
 
-An open information portal for potato production and cold storage planning in Hathras district, Uttar Pradesh. Built with Python and Flask; charts use Chart.js and the map uses Leaflet (both loaded from cdnjs, so there is no build step).
+Cold storage planning for every harvest. ColdFlow forecasts potato production, simulates cold storage stock against capacity month by month, and flags shortfalls, for the flagship Hathras district dataset or for your own data. Users can create accounts to save plans. Built with Python and Flask; charts use Chart.js and the map uses Leaflet (both loaded from cdnjs, so there is no build step).
 
 ## Run locally
 
@@ -15,14 +15,17 @@ python3 -m venv .venv
 
 | Path | Page |
 |---|---|
-| `/` | Home: hero snapshot, key numbers, tools, storage outlook, audiences |
+| `/` | ColdFlow landing page |
+| `/plan` | Plan with your own data (editable seasons, CSV upload, calendar, share link, save) |
+| `/signup`, `/login`, `/dashboard`, `/account` | Accounts, saved plans, profile/password/delete |
+| `/hathras` | Hathras district overview |
 | `/tools` | Tools overview with headline KPIs |
 | `/tools/production` | Area vs output (indexed or absolute), yield trend, season table |
 | `/tools/forecast` | OLS trend forecast for the next two seasons with a 95% interval |
 | `/tools/planner` | Capacity planner: sliders, deficit alert, monthly stock chart (shareable URL) |
 | `/tools/map` | Block strain map and ranking |
 | `/data` | Dataset, assumptions, block shares, CSV download, API list |
-| `/services`, `/about` | What the portal offers; methodology and data provenance |
+| `/services`, `/about`, `/privacy`, `/terms` | Product, methodology, legal |
 
 ## API
 
@@ -31,12 +34,18 @@ python3 -m venv .venv
 | `GET /api/baseline` | Series with YoY, blocks, assumptions |
 | `GET /api/forecast?horizon=2` | Forecast rows (1–5 seasons) and model stats |
 | `GET` or `POST /api/scenario` | `season, capacity, ratio, threshold, facility` → full storage simulation and block strain |
+| `POST /api/analyse` | Your own data → forecast, simulation and warnings (422 with `errors` if invalid) |
+| `GET/POST /api/plans`, `PUT /api/plans/<id>` | Saved plans for the signed-in user (needs `X-CSRF-Token`) |
 | `GET /data/production.csv` | District series as CSV |
 
 ## Layout
 
 ```
-portal/__init__.py      Flask app, routes, API
+portal/__init__.py      App factory, config, error handlers
+portal/views_*.py       Pages, JSON API, accounts
+portal/db.py            SQLite/Postgres access
+portal/security.py      Sessions, CSRF, login_required
+portal/core/custom.py   Validation + analysis for user data
 portal/core/dataset.py  Supplied data and planning assumptions (edit here)
 portal/core/analytics.py  YoY, CAGR, OLS forecast
 portal/core/storage.py  Storage demand, monthly simulation, block strain
@@ -51,6 +60,15 @@ react-version/          Earlier React/Vite dashboard, kept for reference
 ## Data provenance
 
 The district area, production and yield series (2018-19 to 2023-24) is as supplied in the project brief; cross-check it against UP Directorate of Horticulture or DES releases. District cold storage capacity (950,000 t), the monthly intake and release profiles, and the block split are **planning assumptions**, labelled as such on the site.
+
+## Accounts in production
+
+Locally, accounts use a SQLite file in `instance/`. On Vercel the filesystem doesn't persist, so accounts are **off** until both are set as Vercel environment variables:
+
+- `DATABASE_URL`: a Postgres connection string (e.g. Neon via the Vercel Marketplace, or Supabase). Tables are created automatically.
+- `SECRET_KEY`: a long random string that signs session cookies.
+
+Until then, sign-up shows an "Accounts are coming soon" page and everything else works. Password reset by email is not built yet.
 
 ## Deploy
 

@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block title %}Plan with your data · ColdFlow{% endblock %}
+{% block description %}Enter seasons for any district or cold store and get a harvest forecast, storage outlook and deficit alerts.{% endblock %}
+
+{% block content %}
+{% set months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+<section class="page-head">
+  <div class="container plan-banner">
+    <div style="min-width:0;flex:1">
+      <div class="crumbs">{% if g.user %}<a href="{{ url_for('dashboard') }}">Dashboard</a> / {% endif %}Plan your data</div>
+      <h1>Plan with your own data</h1>
+      <p class="lead" style="margin:0;max-width:720px">Enter a few seasons for any district or cold store. ColdFlow forecasts the next two harvests and checks them against your storage capacity month by month.</p>
+    </div>
+  </div>
+</section>
+
+<div class="container stack">
+  <div class="card card-body plan-banner">
+    <div class="form-field" style="margin:0;flex:1;min-width:220px;max-width:420px">
+      <label for="plan-name">Plan name</label>
+      <input class="input-text" id="plan-name" maxlength="80" placeholder="e.g. Agra district 2025">
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-ghost btn-sm" type="button" id="load-example">Load Hathras example</button>
+      <label class="btn btn-ghost btn-sm" for="csv-file" style="cursor:pointer">Upload CSV</label>
+      <input type="file" id="csv-file" accept=".csv,text/csv" class="sr-only">
+      <button class="btn btn-ghost btn-sm" type="button" id="download-csv">Download CSV</button>
+      <button class="btn btn-ghost btn-sm" type="button" id="share">Copy share link</button>
+      {% if accounts and g.user %}
+        <button class="btn btn-primary btn-sm" type="button" id="save">Save plan</button>
+      {% elif accounts %}
+        <a class="btn btn-primary btn-sm" href="{{ url_for('login', next=url_for('plan')) }}" id="login-to-save">Log in to save</a>
+      {% endif %}
+    </div>
+    <span class="save-status" id="save-status" aria-live="polite">{% if saved %}Saved {{ saved.updated_at[:16]|replace('T', ' ') }} UTC{% endif %}</span>
+  </div>
+
+  <div class="split split-plan">
+    <div class="stack">
+      <div class="card">
+        <div class="card-head"><div><h2>Your seasons</h2><p>Area in hectares, production in tonnes. At least 3 consecutive seasons.</p></div></div>
+        <div class="table-wrap">
+          <table class="table data-table">
+            <thead><tr><th>Season</th><th class="r">Area (ha)</th><th class="r">Production (t)</th><th class="r">Yield</th><th><span class="sr-only">Remove</span></th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div class="card-body toolbar" style="border-top:1px solid var(--line)">
+          <button class="btn btn-ghost btn-sm" type="button" id="add-row">+ Add season</button>
+          <button class="btn btn-ghost btn-sm" type="button" id="clear-rows">Clear</button>
+        </div>
+        <p class="xs muted" style="padding:0 20px 14px;margin:0">CSV columns: <code>season, area_ha, production_t</code>, e.g. <code>2023-24, 55200, 1362000</code></p>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Storage settings</h2><p>For your district or facility</p></div></div>
+        <div class="card-body">
+          <div class="form-field">
+            <label for="capacity">Cold storage capacity (t)</label>
+            <input class="num-input" id="capacity" type="number" min="1" step="1000" inputmode="numeric">
+          </div>
+          <div class="field">
+            <div class="field-top"><label for="ratio">Share of harvest stored</label><output data-out="ratio"></output></div>
+            <input type="range" id="ratio" min="0.05" max="1" step="0.01">
+          </div>
+          <div class="field">
+            <div class="field-top"><label for="threshold">Alert threshold</label><output data-out="threshold"></output></div>
+            <input type="range" id="threshold" min="0.5" max="1" step="0.01">
+          </div>
+          <div class="form-field" style="margin:0">
+            <label for="facility">One facility's capacity (t) <span class="opt">for coverage</span></label>
+            <input class="num-input" id="facility" type="number" min="1" step="500" inputmode="numeric">
+          </div>
+        </div>
+        <details class="panel" id="calendar">
+          <summary>Harvest calendar</summary>
+          <div>
+            <p class="small muted">Share of the season's storage intake loaded each month, and share released each month. Percentages; each row is scaled to 100%.</p>
+            <p class="small" style="margin:12px 0 6px"><strong>Loading into storage</strong></p>
+            <div class="cal-grid">
+              {% for mo in months %}<div><label for="in-{{ mo }}">{{ mo }}</label><input id="in-{{ mo }}" data-cal="intake" data-month="{{ mo }}" type="number" min="0" max="100" step="1" inputmode="decimal"></div>{% endfor %}
+            </div>
+            <div class="cal-sum" data-sum="intake"></div>
+            <p class="small" style="margin:14px 0 6px"><strong>Release from storage</strong></p>
+            <div class="cal-grid">
+              {% for mo in months %}<div><label for="out-{{ mo }}">{{ mo }}</label><input id="out-{{ mo }}" data-cal="release" data-month="{{ mo }}" type="number" min="0" max="100" step="1" inputmode="decimal"></div>{% endfor %}
+            </div>
+            <div class="cal-sum" data-sum="release"></div>
+            <p style="margin:12px 0 0"><button class="btn btn-ghost btn-sm" type="button" id="cal-default">Reset to western UP potato calendar</button></p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="stack" aria-live="polite">
+      <div class="form-error" id="errors" role="alert" hidden></div>
+      <div class="notice" id="warnings" hidden><strong>Check your data</strong><ul class="warn-list" id="warn-list"></ul></div>
+
+      <div id="results" class="stack">
+        <div class="plan-banner">
+          <span class="based-on"><span aria-hidden="true">✎</span>Based on data you entered · <span data-bind="name"></span></span>
+          <div class="field" style="margin:0;min-width:200px">
+            <label for="season" class="sr-only">Season for storage outlook</label>
+            <select class="input" id="season"></select>
+          </div>
+        </div>
+
+        <dl class="mini-stats" style="margin:0">
+          <div><dt>Latest harvest</dt><dd data-bind="latest"></dd><dd data-bind="latest-season"></dd></div>
+          <div><dt>YoY change</dt><dd data-bind="yoy"></dd><dd>vs previous season</dd></div>
+          <div><dt>Annual growth</dt><dd data-bind="cagr"></dd><dd data-bind="cagr-span"></dd></div>
+          <div><dt>Average yield</dt><dd data-bind="yield"></dd><dd>across your seasons</dd></div>
+        </dl>
+
+        <div class="alert lvl-good" id="alert"><i aria-hidden="true" data-bind="alert-icon">●</i><div><strong data-bind="alert-title"></strong><p data-bind="alert-body"></p></div></div>
+
+        <dl class="mini-stats" style="margin:0">
+          <div><dt>Harvest in outlook</dt><dd data-bind="production"></dd><dd data-bind="season-label"></dd></div>
+          <div><dt>Storage demand</dt><dd data-bind="demand"></dd><dd data-bind="ratio-label"></dd></div>
+          <div><dt>Capacity coverage</dt><dd data-bind="coverage"></dd><dd data-bind="gap"></dd></div>
+          <div><dt>One facility covers</dt><dd data-bind="facility-cov"></dd><dd>of storage demand</dd></div>
+        </dl>
+
+        <div class="card">
+          <div class="card-head"><div><h2>Stock vs capacity by month</h2><p>Peak loading shaded</p></div></div>
+          <div class="card-body">
+            <ul class="legend">
+              <li><span class="sw box" style="--c:var(--series-1)"></span>Stock in cold storage</li>
+              <li><span class="sw box" style="--c:var(--status-critical)"></span>Unmet storage demand</li>
+              <li><span class="sw" style="--c:var(--ink)"></span>Capacity</li>
+              <li><span class="sw dash" style="--c:var(--status-serious)"></span>Alert threshold</li>
+            </ul>
+            <div class="chart-box tall"><canvas id="storage-chart" aria-label="Monthly stock against capacity for your data"></canvas></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><h2>Harvest forecast</h2><p>Linear trend on your seasons, 95% prediction interval</p></div>
+            <div class="seg" role="radiogroup" aria-label="Forecast metric" data-seg="fc">
+              <button type="button" role="radio" aria-checked="true" data-value="production">Production</button>
+              <button type="button" role="radio" aria-checked="false" data-value="yield">Yield</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <ul class="legend">
+              <li><span class="sw" style="--c:var(--series-1)"></span>Your data</li>
+              <li><span class="sw dash" style="--c:var(--series-1)"></span>Forecast</li>
+              <li><span class="sw band" style="--c:var(--band-1)"></span>95% interval</li>
+            </ul>
+            <div class="chart-box"><canvas id="forecast-chart" aria-label="Your seasons with forecast"></canvas></div>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Season</th><th class="r">Production</th><th class="r">95% range</th><th class="r">Yield</th></tr></thead>
+              <tbody id="fc-rows"></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="xs muted" style="margin:0">Results are only as good as the figures entered. Forecasts are a straight-line trend and don't model weather or prices. <a href="{{ url_for('about') }}#methodology">Methodology</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+{{ m.page_data({
+  'example': example,
+  'saved': saved,
+  'canSave': accounts and g.user is not none,
+  'csrf': csrf_token() if accounts and g.user else None,
+}) }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/plan.js') }}"></script>
+{% endblock %}

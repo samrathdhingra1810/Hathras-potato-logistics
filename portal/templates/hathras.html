@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% import "macros.html" as m with context %}
-{% block title %}{{ site_name }} · Potato & cold storage data for Hathras{% endblock %}
+{% block title %}Hathras district · ColdFlow{% endblock %}
+{% block description %}Potato production, harvest forecast and cold storage outlook for Hathras district, Uttar Pradesh.{% endblock %}
 
 {% block content %}
 {% set h = headline %}{% set latest = h.latest %}{% set sim = scenario.simulation %}
@@ -9,10 +10,10 @@
     <div>
       <span class="eyebrow">{{ district.name }} district · {{ district.state }}</span>
       <h1>Potato harvest &amp; cold storage intelligence for <span>{{ district.name }}</span></h1>
-      <p class="lead">Six seasons of production data, a two-season harvest forecast and a capacity planner that shows when the district's cold stores run out of room. Free and open for farmers, storage operators, traders and planners.</p>
+      <p class="lead">ColdFlow's flagship dataset: six seasons of district production data, a two-season harvest forecast and a capacity planner that shows when the district's cold stores run out of room.</p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="{{ url_for('tool_planner') }}">Plan storage capacity →</a>
-        <a class="btn btn-ghost" href="{{ url_for('tools') }}">Explore all tools</a>
+        <a class="btn btn-ghost" href="{{ url_for('plan') }}">Use your own data</a>
       </div>
       <ul class="hero-points">
         <li>No sign-up</li>

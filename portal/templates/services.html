@@ -8,12 +8,24 @@
   <div class="container">
     <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / Services</div>
     <h1>Services</h1>
-    <p class="lead" style="max-width:720px">Free, open tools and data for planning {{ district.name }}'s potato season. Pick what you need below, or start with the capacity planner.</p>
+    <p class="lead" style="max-width:720px">Tools and data for planning the potato season: the Hathras district dataset, and the same tools for your own figures.</p>
   </div>
 </section>
 
 <section class="section-tight">
   <div class="container grid grid-3">
+    <a class="card card-link feature" href="{{ url_for('plan') }}">
+      <div class="icon" aria-hidden="true">✎</div>
+      <h3>Plan with your own data</h3>
+      <p>Enter seasons for any district or cold store, set your capacity and harvest calendar, and get the same forecast and storage outlook.</p>
+      <span class="go">Open →</span>
+    </a>
+    <a class="card card-link feature" href="{{ url_for('signup') if accounts_enabled else url_for('plan') }}">
+      <div class="icon" aria-hidden="true">☁</div>
+      <h3>Accounts &amp; saved plans</h3>
+      <p>Create a free account to save plans, update them each season, and pick up where you left off on any device.</p>
+      <span class="go">{{ 'Create account →' if accounts_enabled else 'Coming soon' }}</span>
+    </a>
     <a class="card card-link feature" href="{{ url_for('tool_production') }}">
       <div class="icon" aria-hidden="true">▤</div>
       <h3>Production analytics</h3>

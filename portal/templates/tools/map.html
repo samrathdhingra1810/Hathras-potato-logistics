@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% import "macros.html" as m with context %}
-{% block title %}Block strain map · {{ site_name }}{% endblock %}
+{% block title %}Block strain map · Hathras · ColdFlow{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 {% endblock %}
@@ -9,7 +9,7 @@
 {% set s = scenario %}{% set i = s.inputs %}
 <section class="page-head">
   <div class="container">
-    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / <a href="{{ url_for('tools') }}">Tools</a> / Block map</div>
+    <div class="crumbs"><a href="{{ url_for('hathras') }}">Hathras</a> / <a href="{{ url_for('tools') }}">Tools</a> / Block map</div>
     <h1>Block-level storage strain</h1>
     <p class="lead" style="max-width:760px">Projected cold storage demand ÷ local capacity for each development block of {{ district.name }} district.</p>
   </div>

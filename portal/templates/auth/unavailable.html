@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Accounts coming soon · ColdFlow{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container" style="text-align:center;max-width:600px">
+    <span class="eyebrow">Accounts</span>
+    <h1>Accounts are coming soon</h1>
+    <p class="lead">Sign-up and saved plans aren't switched on for this site yet. Every tool still works without an account. You can plan with your own data and share the link.</p>
+    <p><a class="btn btn-primary" href="{{ url_for('plan') }}">Plan with your data</a> <a class="btn btn-ghost" href="{{ url_for('hathras') }}">Hathras example</a></p>
+  </div>
+</section>
+{% endblock %}

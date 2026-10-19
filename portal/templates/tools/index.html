@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% import "macros.html" as m with context %}
-{% block title %}Tools · {{ site_name }}{% endblock %}
+{% block title %}Tools · Hathras · ColdFlow{% endblock %}
 
 {% block content %}
 {% set sim = scenario.simulation %}
 <section class="page-head">
   <div class="container">
-    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / Tools</div>
+    <div class="crumbs"><a href="{{ url_for('hathras') }}">Hathras</a> / Tools</div>
     <h1>Data &amp; planning tools</h1>
     <p class="lead" style="max-width:720px">Headline numbers for {{ district.name }}, then pick a tool to dig in.</p>
   </div>

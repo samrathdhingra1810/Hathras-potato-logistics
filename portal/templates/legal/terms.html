@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Terms of use · ColdFlow{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / Terms</div>
+    <h1>Terms of use</h1>
+    <p class="muted">Last updated 19 October 2026</p>
+  </div>
+</section>
+<div class="container">
+  <div class="prose">
+    <h2 style="margin-top:0">The service</h2>
+    <p>ColdFlow provides planning tools for potato production and cold storage: forecasts, storage simulations and related data. You can use the tools without an account; an account lets you save plans.</p>
+    <h2>Estimates, not guarantees</h2>
+    <p>Forecasts and storage outlooks are statistical estimates based on the data provided, including figures you enter yourself and stated planning assumptions. They are for guidance only and are not official statistics or financial, investment or business advice. Check important decisions against official sources and your own judgement.</p>
+    <h2>Your account</h2>
+    <ul>
+      <li>Keep your password private; you're responsible for activity on your account.</li>
+      <li>Only enter data you have the right to use.</li>
+      <li>Don't misuse the service: no attempts to break in, overload it, or access other users' data.</li>
+    </ul>
+    <h2>Data you provide</h2>
+    <p>You keep ownership of the figures you enter. You allow us to store and process them to provide the service to you. See the <a href="{{ url_for('privacy') }}">Privacy policy</a>.</p>
+    <h2>Availability and changes</h2>
+    <p>We may change, suspend or discontinue features, and may update these terms; the date above shows the latest version. We may close accounts that break these terms.</p>
+    <h2>Liability</h2>
+    <p>The service is provided “as is”. To the extent the law allows, ColdFlow is not liable for losses arising from decisions made using its outputs.</p>
+  </div>
+</div>
+{% endblock %}

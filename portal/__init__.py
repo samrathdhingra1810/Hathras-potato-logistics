@@ -1,15 +1,15 @@
-"""Hathras Potato Logistics: a regional information portal (Flask)."""
+"""ColdFlow: cold storage planning for every harvest (Flask app factory)."""
 from __future__ import annotations
 
-import csv
-import io
-from datetime import date
+import os
+import secrets
+from datetime import date, timedelta
 
-from flask import Flask, Response, abort, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request
 
+from . import db, security, views_api, views_auth, views_pages
 from .core import dataset as ds
-from .core.analytics import forecast_series, summary, with_yoy
-from .core.storage import block_strain, facility_coverage, simulate_storage_year, storage_demand
+from .core.analytics import summary
 from .formatting import FILTERS
 
 TOOLS = [
@@ -24,147 +24,70 @@ TOOLS = [
 ]
 
 
-def _num_arg(source, key, default, lo, hi):
-    """Reads a bounded number from query/JSON; falls back to default when missing or out of range."""
-    try:
-        v = float(source.get(key, default))
-    except (TypeError, ValueError):
-        return default
-    return v if lo <= v <= hi else default
+def create_app(test_config: dict | None = None) -> Flask:
+    app = Flask(__name__, instance_relative_config=True)
+    on_vercel = bool(os.environ.get("VERCEL"))
+    secret = os.environ.get("SECRET_KEY")
+    app.config.update(
+        SECRET_KEY=secret or secrets.token_hex(32),
+        # Without a fixed key, sessions don't survive across serverless instances, so
+        # accounts stay off on Vercel until SECRET_KEY is set. Locally a random key is fine.
+        SECRET_KEY_CONFIGURED=bool(secret) or not on_vercel,
+        ON_VERCEL=on_vercel,
+        DATABASE_URL=os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or "",
+        SQLITE_PATH=os.path.join(app.instance_path, "coldflow.db"),
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_SECURE=on_vercel,
+        PERMANENT_SESSION_LIFETIME=timedelta(days=30),
+        MAX_CONTENT_LENGTH=512 * 1024,
+    )
+    if test_config:
+        app.config.update(test_config)
 
-
-def _scenario(source) -> dict:
-    """Planner inputs -> demand, simulation and block strain for one season."""
-    series = with_yoy(ds.PRODUCTION_SERIES)
-    fc = forecast_series(ds.PRODUCTION_SERIES, 2)
-    seasons = {series[-1]["season"]: series[-1]["production_t"]}
-    seasons.update({r["season"]: r["production_t"] for r in fc["rows"]})
-
-    season = source.get("season") or series[-1]["season"]
-    if season not in seasons:
-        season = series[-1]["season"]
-    ratio = _num_arg(source, "ratio", ds.DEFAULT_STORAGE_RATIO, 0.05, 1)
-    capacity = _num_arg(source, "capacity", ds.DEFAULT_REGIONAL_CAPACITY_T, 1, 1e8)
-    threshold = _num_arg(source, "threshold", ds.DEFAULT_ALERT_THRESHOLD, 0.5, 1)
-    facility = _num_arg(source, "facility", 10_000, 1, 1e7)
-
-    production = seasons[season]
-    demand = storage_demand(production, ratio)
-    sim = simulate_storage_year(demand_t=demand, capacity_t=capacity, alert_threshold=threshold,
-                                intake_profile=ds.MONTHLY_INTAKE_PROFILE, release_profile=ds.MONTHLY_RELEASE_PROFILE)
-    return {
-        "inputs": {"season": season, "ratio": ratio, "capacity": capacity, "threshold": threshold, "facility": facility},
-        "seasons": [{"value": s, "label": f"{s} {'actual' if s == series[-1]['season'] else 'forecast'}"} for s in seasons],
-        "production_t": production,
-        "demand_t": demand,
-        "facility_coverage": facility_coverage(facility, demand),
-        "district_coverage": capacity / demand if demand else None,
-        "facilities_to_close_gap": max(demand - capacity, 0) / facility,
-        "simulation": sim,
-        "blocks": block_strain(ds.BLOCKS, demand_t=demand, capacity_t=capacity, alert_threshold=threshold),
-    }
-
-
-def create_app() -> Flask:
-    app = Flask(__name__)
     app.jinja_env.filters.update(FILTERS)
     app.json.sort_keys = False
+
+    db.init_app(app)
+    security.init_app(app)
+    views_pages.init_app(app)
+    views_api.init_app(app)
+    views_auth.init_app(app)
 
     @app.context_processor
     def site_context():
         return {
-            "site_name": "Hathras Potato Logistics",
+            "site_name": "ColdFlow",
             "district": ds.DISTRICT,
             "source": ds.DATA_SOURCE,
             "tools": TOOLS,
             "headline": summary(ds.PRODUCTION_SERIES),
             "year": date.today().year,
+            "accounts_enabled": db.accounts_enabled(),
         }
 
-    # ---------- Pages ----------
-    @app.get("/")
-    def home():
-        scenario = _scenario({})
-        return render_template("home.html", series=with_yoy(ds.PRODUCTION_SERIES), scenario=scenario,
-                               forecast=forecast_series(ds.PRODUCTION_SERIES, 2))
-
-    @app.get("/about")
-    def about():
-        return render_template("about.html", assumptions=ds.ASSUMPTIONS)
-
-    @app.get("/services")
-    def services():
-        return render_template("services.html")
-
-    @app.get("/tools")
-    def tools():
-        return render_template("tools/index.html", scenario=_scenario({}),
-                               forecast=forecast_series(ds.PRODUCTION_SERIES, 2))
-
-    @app.get("/tools/production")
-    def tool_production():
-        return render_template("tools/production.html", series=with_yoy(ds.PRODUCTION_SERIES))
-
-    @app.get("/tools/forecast")
-    def tool_forecast():
-        return render_template("tools/forecast.html", series=with_yoy(ds.PRODUCTION_SERIES),
-                               forecast=forecast_series(ds.PRODUCTION_SERIES, 2))
-
-    @app.get("/tools/planner")
-    def tool_planner():
-        return render_template("tools/planner.html", scenario=_scenario(request.args))
-
-    @app.get("/tools/map")
-    def tool_map():
-        return render_template("tools/map.html", scenario=_scenario(request.args))
-
-    @app.get("/data")
-    def data():
-        return render_template("data.html", series=with_yoy(ds.PRODUCTION_SERIES), assumptions=ds.ASSUMPTIONS,
-                               blocks=ds.BLOCKS)
-
-    @app.get("/data/production.csv")
-    def production_csv():
-        buf = io.StringIO()
-        w = csv.writer(buf)
-        w.writerow(["season", "area_ha", "production_t", "yield_kg_ha"])
-        for r in ds.PRODUCTION_SERIES:
-            w.writerow([r["season"], r["area_ha"], r["production_t"], r["yield_kg_ha"]])
-        return Response(buf.getvalue(), mimetype="text/csv",
-                        headers={"Content-Disposition": "attachment; filename=hathras-potato-production.csv"})
-
-    # ---------- JSON API ----------
-    @app.get("/api/health")
-    def api_health():
-        return jsonify(ok=True)
-
-    @app.get("/api/baseline")
-    def api_baseline():
-        return jsonify(district=ds.DISTRICT, source=ds.DATA_SOURCE, series=with_yoy(ds.PRODUCTION_SERIES),
-                       blocks=ds.BLOCKS, assumptions=ds.ASSUMPTIONS)
-
-    @app.get("/api/forecast")
-    def api_forecast():
-        horizon = int(_num_arg(request.args, "horizon", 2, 1, 5))
-        return jsonify(forecast_series(ds.PRODUCTION_SERIES, horizon))
-
-    @app.route("/api/scenario", methods=["GET", "POST"])
-    def api_scenario():
-        source = (request.get_json(silent=True) or {}) if request.method == "POST" else request.args
-        return jsonify(_scenario(source))
-
-    @app.route("/api/<path:_rest>")
-    def api_not_found(_rest):
-        return jsonify(error="Not found"), 404
+    @app.errorhandler(400)
+    def bad_request(e):
+        if request.path.startswith("/api/"):
+            return jsonify(error=e.description), 400
+        return render_template("error.html", code=400, title="Something went wrong", message=e.description), 400
 
     @app.errorhandler(404)
     def not_found(_e):
-        return render_template("404.html"), 404
+        return render_template("error.html", code=404, title="Page not found",
+                               message="That page doesn't exist. Try the tools or head back home."), 404
+
+    @app.errorhandler(413)
+    def too_large(_e):
+        return jsonify(error="That upload is too large (limit 512 KB)."), 413
 
     @app.after_request
-    def cache_headers(resp):
+    def headers(resp):
         if request.path.startswith("/static/"):
             resp.headers.setdefault("Cache-Control", "public, max-age=86400")
+        resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+        resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        resp.headers.setdefault("X-Frame-Options", "DENY")
         return resp
 
     return app

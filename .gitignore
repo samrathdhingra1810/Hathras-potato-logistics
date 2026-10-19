@@ -6,3 +6,4 @@ __pycache__/
 .env*.local
 react-version/node_modules
 react-version/dist
+instance/
