@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import json
 
-from flask import g, jsonify, request
+from flask import current_app, g, jsonify, request
 
-from . import db
+from . import assistant, db
 from .core import dataset as ds
 from .core.analytics import forecast_series, with_yoy
 from .core.custom import InputError, analyse, validate
@@ -56,6 +56,28 @@ def init_app(app):
             return jsonify(analyse(request.get_json(silent=True)))
         except InputError as e:
             return jsonify(errors=e.errors), 422
+
+    @app.post("/api/assistant")
+    def api_assistant():
+        body = request.get_json(silent=True) or {}
+        ip = (request.headers.get("X-Forwarded-For") or request.remote_addr or "?").split(",")[0].strip()
+        if not assistant.allow(ip):
+            return jsonify(error="You're sending questions quickly. Wait a few minutes and try again."), 429
+        try:
+            history = assistant.clean_history(body.get("messages"))
+        except ValueError as e:
+            return jsonify(error=str(e)), 400
+        if not assistant.ai_configured():
+            return jsonify(assistant.answer_offline(history, body.get("context")))
+        try:
+            return jsonify(assistant.answer_with_claude(history, body.get("context")))
+        except Exception:
+            current_app.logger.exception("assistant request failed")
+            fallback = assistant.answer_offline(history)
+            fallback["reply"] = fallback["reply"].replace(
+                "_Offline help: the AI assistant isn't connected on this site yet._",
+                "_The AI assistant couldn't be reached, so this is offline help._")
+            return jsonify(fallback)
 
     # ---- Saved plans (signed-in users) ----
     @app.get("/api/plans")

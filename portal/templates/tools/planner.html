@@ -9,6 +9,8 @@
     <div class="crumbs"><a href="{{ url_for('hathras') }}">Hathras</a> / <a href="{{ url_for('tools') }}">Tools</a> / Capacity planner</div>
     <h1>Cold storage capacity planner</h1>
     <p class="lead" style="max-width:760px">Load the season's harvest into the district's cold stores month by month and see where capacity runs out. Change the inputs; the link updates so you can share your scenario.</p>
+    <p class="no-print" style="margin:14px 0 0"><button class="btn btn-ghost btn-sm" type="button" data-print>⇩ Download report (PDF)</button></p>
+    <p class="print-only small">ColdFlow report · Hathras capacity planner · <span data-print-date></span></p>
   </div>
 </section>
 <div class="container stack">
@@ -51,6 +53,8 @@
         <i aria-hidden="true" data-bind="alert-icon">■</i>
         <div><strong data-bind="alert-title"></strong><p data-bind="alert-body"></p></div>
       </div>
+
+      <div class="need"><span>Capacity needed for this season:</span><strong class="tabular" data-bind="need">{{ sim.capacity_needed_t|tonnes }}</strong><span>to avoid any deficit ·</span><strong class="tabular" data-bind="need-thr">{{ sim.capacity_needed_threshold_t|tonnes }}</strong><span>to stay under your alert threshold</span></div>
 
       <dl class="mini-stats" style="margin:0">
         <div><dt>Harvest</dt><dd data-bind="production">{{ s.production_t|tonnes }}</dd><dd data-bind="season-label">{{ i.season }}</dd></div>

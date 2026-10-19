@@ -16,7 +16,8 @@
 </section>
 
 <div class="container stack">
-  <div class="card card-body plan-banner">
+  <p class="print-only small">ColdFlow report · <span data-bind="name"></span> · <span data-print-date></span></p>
+  <div class="card card-body plan-banner no-print">
     <div class="form-field" style="margin:0;flex:1;min-width:220px;max-width:420px">
       <label for="plan-name">Plan name</label>
       <input class="input-text" id="plan-name" maxlength="80" placeholder="e.g. Agra district 2025">
@@ -27,6 +28,7 @@
       <input type="file" id="csv-file" accept=".csv,text/csv" class="sr-only">
       <button class="btn btn-ghost btn-sm" type="button" id="download-csv">Download CSV</button>
       <button class="btn btn-ghost btn-sm" type="button" id="share">Copy share link</button>
+      <button class="btn btn-ghost btn-sm" type="button" data-print>⇩ Report (PDF)</button>
       {% if accounts and g.user %}
         <button class="btn btn-primary btn-sm" type="button" id="save">Save plan</button>
       {% elif accounts %}
@@ -37,7 +39,7 @@
   </div>
 
   <div class="split split-plan">
-    <div class="stack">
+    <div class="stack no-print">
       <div class="card">
         <div class="card-head"><div><h2>Your seasons</h2><p>Area in hectares, production in tonnes. At least 3 consecutive seasons.</p></div></div>
         <div class="table-wrap">
@@ -114,6 +116,8 @@
         </dl>
 
         <div class="alert lvl-good" id="alert"><i aria-hidden="true" data-bind="alert-icon">●</i><div><strong data-bind="alert-title"></strong><p data-bind="alert-body"></p></div></div>
+
+        <div class="need"><span>Capacity needed:</span><strong class="tabular" data-bind="need"></strong><span>to avoid any deficit ·</span><strong class="tabular" data-bind="need-thr"></strong><span>to stay under your threshold</span></div>
 
         <dl class="mini-stats" style="margin:0">
           <div><dt>Harvest in outlook</dt><dd data-bind="production"></dd><dd data-bind="season-label"></dd></div>

@@ -1,161 +1,135 @@
 {% extends "base.html" %}
 {% import "macros.html" as m with context %}
 {% block title %}ColdFlow · Cold storage planning for every harvest{% endblock %}
-{% block body_class %}landing{% endblock %}
+{% block body_class %}home{% endblock %}
 
 {% block content %}
-{% set h = headline %}{% set latest = h.latest %}{% set sim = scenario.simulation %}
-<section class="splash" id="s-hero" data-section="Intro">
-  <div class="splash-glow" aria-hidden="true"></div>
-  <div class="splash-chips" id="chips" aria-hidden="true"></div>
-  <div class="splash-center">
-    <h1 class="splash-word">Cold<span>Flow</span></h1>
-    <p class="splash-tag">Cold storage planning for every harvest.</p>
-    <div class="splash-actions">
-      {% if accounts_enabled and not g.user %}
-        <a class="btn btn-primary" href="{{ url_for('signup') }}">Get started free</a>
-      {% else %}
-        <a class="btn btn-primary" href="{{ url_for('plan') }}">Start planning</a>
-      {% endif %}
-      <a class="btn btn-ghost" href="{{ url_for('hathras') }}">See the Hathras example</a>
-    </div>
-  </div>
-  <div class="splash-foot">
-    <div class="splash-clock" id="clock"><strong data-clock-time>--:--</strong><span data-clock-date>Hathras time</span></div>
-    <nav class="splash-dots" id="dots" aria-label="Page sections"></nav>
-    <a class="splash-scroll" href="#s-what">Scroll ↓</a>
-  </div>
-</section>
+{% set h = headline %}{% set latest = h.latest %}{% set sim = scenario.simulation %}{% set i = scenario.inputs %}
+{% set util = sim.peak_utilisation %}
+<section class="launch">
+  <div class="launch-bg" aria-hidden="true"><span class="orb orb-a"></span><span class="orb orb-b"></span></div>
 
-<section class="section" id="s-what" data-section="What it does">
-  <div class="container split split-1-1" style="align-items:center">
-    <div>
-      <span class="eyebrow">What ColdFlow does</span>
-      <h2>Know before the harvest whether your crop has somewhere to go</h2>
-      <p class="lead">Potatoes are dug in a few weeks and must reach cold storage soon after. ColdFlow forecasts the crop, loads it into storage month by month, and tells you where capacity runs out.</p>
-      <div class="feature-list">
-        <div><span class="fi" aria-hidden="true">↗</span><div><strong>Harvest forecast</strong><p>Trend projection for the next two seasons with an honest 95% range.</p></div></div>
-        <div><span class="fi" aria-hidden="true">▦</span><div><strong>Capacity simulation</strong><p>Stock vs capacity for every month, from loading in spring to release in autumn.</p></div></div>
-        <div><span class="fi" aria-hidden="true">!</span><div><strong>Deficit alerts</strong><p>The exact tonnes without a cold-chain slot, and in which month.</p></div></div>
+  <div class="container launch-grid">
+    <div class="launch-copy">
+      <span class="live-pill"><i aria-hidden="true"></i>Live for Hathras · {{ district.state }}</span>
+      <h1 class="launch-title">Every harvest,<br><span>a place to go.</span></h1>
+      <p class="launch-lead">ColdFlow forecasts the potato crop, loads it into cold storage month by month, and shows where capacity runs out, for Hathras or your own district.</p>
+
+      <form class="ask-bar" id="ask-form" role="search" aria-label="Ask ColdFlow">
+        <span class="ask-spark" aria-hidden="true">✦</span>
+        <label for="ask-input" class="sr-only">Ask ColdFlow a question</label>
+        <input id="ask-input" name="q" autocomplete="off" maxlength="300" placeholder="Ask anything, e.g. how much storage does Hathras need?">
+        <button class="btn btn-primary btn-sm" type="submit">Ask</button>
+      </form>
+      <div class="ask-chips">
+        <button type="button" data-ask="Will Hathras run short of cold storage this season?">Will Hathras run short?</button>
+        <button type="button" data-ask="What does the 2025-26 forecast look like?">2025-26 forecast</button>
+        <button type="button" data-ask="How do I plan with my own district's data?">Use my own data</button>
       </div>
     </div>
-    <div class="card product-shot">
-      <div class="card-head">
-        <div><h3>Storage outlook · Hathras {{ scenario.inputs.season }}</h3><p>Example output with default assumptions</p></div>
-        {{ m.badge(sim.status, 'Peak ' ~ (sim.peak_utilisation|pct(0))) }}
+
+    <div class="monitor card" aria-label="Hathras storage monitor">
+      <div class="monitor-head">
+        <div>
+          <div class="monitor-kicker">Storage monitor</div>
+          <strong>Hathras · {{ i.season }}</strong>
+        </div>
+        {{ m.badge(sim.status) }}
       </div>
-      <div class="card-body">
-        <ul class="legend">
-          <li><span class="sw box" style="--c:var(--series-1)"></span>Stock in cold storage</li>
-          <li><span class="sw box" style="--c:var(--status-critical)"></span>Unmet demand</li>
-          <li><span class="sw" style="--c:var(--ink)"></span>Capacity</li>
-          <li><span class="sw dash" style="--c:var(--status-serious)"></span>Alert threshold</li>
-        </ul>
-        <div class="chart-box"><canvas id="outlook-chart" aria-label="Monthly cold storage stock against capacity"></canvas></div>
+      <div class="monitor-body">
+        <div class="gauge" style="--p: {{ [util, 1.25]|min / 1.25 }}" role="img" aria-label="Peak utilisation {{ util|pct(0) }}">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="gauge-track" cx="60" cy="60" r="50"></circle>
+            <circle class="gauge-cap" cx="60" cy="60" r="50" style="--cap: {{ 1 / 1.25 }}"></circle>
+            <circle class="gauge-fill lvl-{{ sim.status }}" cx="60" cy="60" r="50"></circle>
+          </svg>
+          <div class="gauge-label"><strong class="tabular" data-count="{{ (util * 100)|round|int }}">{{ util|pct(0) }}</strong><span>peak in {{ sim.peak_month }}</span></div>
+        </div>
+        <dl class="monitor-stats">
+          <div><dt>Harvest</dt><dd class="tabular">{{ scenario.production_t|tonnes }}</dd></div>
+          <div><dt>Storage demand</dt><dd class="tabular">{{ scenario.demand_t|tonnes }}</dd></div>
+          <div><dt>Without space</dt><dd class="tabular {{ 'down' if sim.total_overflow_t > 0 else '' }}">{{ sim.total_overflow_t|tonnes }}</dd></div>
+          <div><dt>Capacity needed</dt><dd class="tabular">{{ sim.capacity_needed_t|tonnes }}</dd></div>
+        </dl>
       </div>
-    </div>
-  </div>
-</section>
-
-<section class="section section-alt" id="s-own" data-section="Your data">
-  <div class="container split split-1-1" style="align-items:center">
-    <div class="card product-shot">
-      <div class="card-head"><div><h3>Your seasons</h3><p>Type, paste or upload a CSV</p></div><span class="pill">Any district or facility</span></div>
-      <div class="table-wrap">
-        <table class="table">
-          <thead><tr><th>Season</th><th class="r">Area (ha)</th><th class="r">Production (t)</th><th class="r">Yield</th></tr></thead>
-          <tbody>
-            {% for r in [('2021-22', 3200, 81600), ('2022-23', 3350, 86100), ('2023-24', 3420, 88900)] %}
-            <tr><td>{{ r[0] }}</td><td class="r">{{ r[1]|num }}</td><td class="r">{{ r[2]|num }}</td><td class="r muted">{{ '%.1f'|format(r[2] / r[1]) }} t/ha</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      {% set top = [sim.capacity_needed_t, i.capacity]|max * 1.08 %}
+      <div class="month-strip" role="img" aria-label="Monthly stock against capacity">
+        <span class="cap-line" style="--cap: {{ (i.capacity / top)|round(4) }}"><em>capacity</em></span>
+        {% for mo in sim.months %}
+        <div class="mcol{% if mo.peak_harvest %} peak{% endif %}">
+          <span class="bar" style="--h: {{ (mo.stock / top * 100)|round(1) }}%; --d: {{ loop.index0 * 45 }}ms"></span>
+          {% if mo.unmet > 0 %}<span class="bar over" style="--h: {{ (mo.unmet / top * 100)|round(1) }}%; --b: {{ (mo.stock / top * 100)|round(1) }}%; --d: {{ loop.index0 * 45 + 300 }}ms"></span>{% endif %}
+          <i>{{ mo.month[:1] }}</i>
+        </div>
+        {% endfor %}
       </div>
-      <div class="card-body small muted" style="border-top:1px solid var(--line)">Illustrative rows. Results are labelled “based on data you entered”.</div>
-    </div>
-    <div>
-      <span class="eyebrow">Bring your own data</span>
-      <h2>Not in Hathras? Plan for your own district or cold store</h2>
-      <p class="lead">Enter a few seasons of area and production, your storage capacity and your harvest calendar. ColdFlow runs the same forecast and simulation on your numbers.</p>
-      <ul class="check-list">
-        <li>Works with as few as three seasons</li>
-        <li>Edit the loading and release calendar for your region</li>
-        <li>Sanity checks flag unusual yields or unit mix-ups</li>
-        <li>Save plans to your account and share a link</li>
-      </ul>
-      <p style="margin-top:22px"><a class="btn btn-primary" href="{{ url_for('plan') }}">Plan with your data →</a></p>
+      <p class="monitor-note">Placeholder capacity {{ i.capacity|tonnes }}. <a href="{{ url_for('tool_planner') }}" data-transition>Change it →</a></p>
     </div>
   </div>
-</section>
 
-<section class="section" id="s-hathras" data-section="Hathras">
-  <div class="container">
-    <div class="section-head">
-      <span class="eyebrow">Live example</span>
-      <h2>Hathras district, Uttar Pradesh</h2>
-      <p class="lead">The flagship dataset: six seasons of district potato figures, with every ColdFlow tool running on them.</p>
-    </div>
-    <div class="card stat-strip">
-      <div><div class="value tabular">{{ '%.3f'|format(latest.production_t / 1e6) }}M t</div><div class="label">Harvest, {{ latest.season }}</div></div>
-      <div><div class="value tabular">{{ latest.area_ha|num }} ha</div><div class="label">Area under potato</div></div>
-      <div><div class="value tabular">{{ '%.2f'|format(latest.yield_kg_ha / 1000) }} t/ha</div><div class="label">Yield</div></div>
-      <div><div class="value tabular">{{ forecast.rows[0].production_t|tonnes }}</div><div class="label">Forecast, {{ forecast.rows[0].season }}</div></div>
-      <div><div class="value tabular">{{ sim.total_overflow_t|tonnes }}</div><div class="label">Shortfall at placeholder capacity</div></div>
-    </div>
-    <div class="grid grid-4" style="margin-top:16px">
-      {% set icons = {'production': '▤', 'forecast': '↗', 'planner': '▦', 'map': '◎'} %}
-      {% for t in tools %}
-      <a class="card card-link feature" href="{{ url_for(t.endpoint) }}">
-        <div class="icon" aria-hidden="true">{{ icons[t.slug] }}</div>
-        <h3>{{ t.name }}</h3>
-        <p>{{ t.blurb }}</p>
-        <span class="go">Open →</span>
-      </a>
-      {% endfor %}
-    </div>
-  </div>
-</section>
+  <nav class="container launch-tiles" aria-label="Start">
+    <a class="tile" href="{{ url_for('plan') }}" data-transition>
+      <span class="tile-ico" aria-hidden="true">✎</span>
+      <span class="tile-txt"><strong>Plan your data</strong><span>Forecast &amp; storage for any district or cold store</span></span>
+      <span class="tile-go" aria-hidden="true">→</span>
+    </a>
+    <a class="tile" href="{{ url_for('hathras') }}" data-transition>
+      <span class="tile-ico" aria-hidden="true">◎</span>
+      <span class="tile-txt"><strong>Hathras example</strong><span>The full district dashboard and map</span></span>
+      <span class="tile-go" aria-hidden="true">→</span>
+    </a>
+    <a class="tile" href="{{ url_for('tool_planner') }}" data-transition>
+      <span class="tile-ico" aria-hidden="true">▦</span>
+      <span class="tile-txt"><strong>Capacity planner</strong><span>What-if capacity in seconds</span></span>
+      <span class="tile-go" aria-hidden="true">→</span>
+    </a>
+    <button class="tile" type="button" data-open-assistant>
+      <span class="tile-ico ai" aria-hidden="true">✦</span>
+      <span class="tile-txt"><strong>Ask the assistant</strong><span>AI answers from ColdFlow's engine</span></span>
+      <span class="tile-go" aria-hidden="true">→</span>
+    </button>
+  </nav>
 
-<section class="section section-alt" id="s-who" data-section="Who it's for">
-  <div class="container">
-    <div class="section-head center">
-      <span class="eyebrow">Who it's for</span>
-      <h2>One set of numbers for the whole supply chain</h2>
-    </div>
-    <div class="grid grid-4">
-      <div class="card feature"><div class="icon" aria-hidden="true">✿</div><h3>Farmers &amp; FPOs</h3><p>See if storage will be tight before you book space or sell at harvest.</p></div>
-      <div class="card feature"><div class="icon" aria-hidden="true">❄</div><h3>Cold storage operators</h3><p>Size expansions against the forecast and see your share of local demand.</p></div>
-      <div class="card feature"><div class="icon" aria-hidden="true">⇄</div><h3>Traders &amp; logistics</h3><p>Anticipate glut months and plan movement out of deficit areas.</p></div>
-      <div class="card feature"><div class="icon" aria-hidden="true">⌂</div><h3>Planners &amp; officials</h3><p>Quantify the capacity gap and prioritise where new storage helps most.</p></div>
-    </div>
+  <div class="container launch-foot">
+    <span>© {{ year }} ColdFlow</span>
+    <a href="{{ url_for('about') }}">About</a>
+    <a href="{{ url_for('services') }}">Services</a>
+    <a href="{{ url_for('privacy') }}">Privacy</a>
+    <a href="{{ url_for('terms') }}">Terms</a>
+    <span class="launch-kbd">Press <kbd>⌘</kbd><kbd>K</kbd> to search</span>
   </div>
 </section>
-
-<section class="section" id="s-start" data-section="Get started">
-  <div class="container">
-    <div class="cta">
-      <h2>Plan your next season in minutes</h2>
-      <p>Start from the Hathras example or your own figures. Create a free account to save plans and come back to them.</p>
-      {% if accounts_enabled and not g.user %}
-      <a class="btn btn-primary" href="{{ url_for('signup') }}">Create free account</a>
-      <a class="btn btn-ghost" href="{{ url_for('plan') }}" style="margin-left:8px">Try without an account</a>
-      {% else %}
-      <a class="btn btn-primary" href="{{ url_for('plan') }}">Start planning</a>
-      {% endif %}
-    </div>
-  </div>
-</section>
-{{ m.page_data({'scenario': scenario}) }}
 {% endblock %}
 
+{% block footer %}{% endblock %}
+
 {% block scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
-<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
 <script>
   (function () {
-    var d = HP.pageData();
-    HP.chart('outlook-chart', function () { return HP.storageConfig(d.scenario); });
+    var form = document.getElementById('ask-form');
+    var input = document.getElementById('ask-input');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var q = input.value.trim();
+      if (window.CFAssistant) window.CFAssistant.open(q || undefined, !!q);
+      input.value = '';
+    });
+    document.querySelectorAll('[data-ask]').forEach(function (b) {
+      b.addEventListener('click', function () { window.CFAssistant && window.CFAssistant.open(b.dataset.ask, true); });
+    });
+    // Count the gauge number up once.
+    var el = document.querySelector('[data-count]');
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (el && !reduce) {
+      var target = +el.dataset.count, t0 = null;
+      var step = function (t) {
+        if (!t0) t0 = t;
+        var k = Math.min((t - t0) / 1100, 1);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - k, 3))) + '%';
+        if (k < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
   })();
 </script>
 {% endblock %}

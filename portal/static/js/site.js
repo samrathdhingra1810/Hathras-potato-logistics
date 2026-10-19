@@ -48,13 +48,6 @@
     });
   });
 
-  // Landing: solid nav once the splash scrolls away.
-  if (document.body.classList.contains('landing') && nav) {
-    var onScroll = function () { nav.classList.toggle('scrolled', window.scrollY > 40); };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-  }
-
   document.querySelectorAll('[data-dismiss]').forEach(function (btn) {
     btn.addEventListener('click', function () { btn.parentElement.remove(); });
   });
@@ -67,5 +60,42 @@
       btn.textContent = show ? 'Hide' : 'Show';
       btn.setAttribute('aria-pressed', String(show));
     });
+  });
+
+  // ---- Page transitions ----
+  // Browsers with cross-document View Transitions animate natively (see site.css);
+  // the clicked tile morphs into the next page's header. Others get a short fade.
+  var nativeVT = 'onpagereveal' in window;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!nativeVT) root.classList.add('no-vt');
+  window.CF = window.CF || {};
+  window.CF.navigate = function (href, fromEl) {
+    if (nativeVT || reduce) {
+      if (fromEl && nativeVT) fromEl.style.viewTransitionName = 'cf-hero';
+      location.href = href;
+      return;
+    }
+    document.body.classList.add('is-leaving');
+    setTimeout(function () { location.href = href; }, 200);
+  };
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[data-transition]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (a.origin !== location.origin || a.target === '_blank') return;
+    if (a.pathname === location.pathname && a.hash) return;
+    e.preventDefault();
+    window.CF.navigate(a.href, a.classList.contains('tile') ? a : null);
+  });
+  // Restore after back/forward cache.
+  window.addEventListener('pageshow', function () { document.body.classList.remove('is-leaving'); });
+
+  // ---- Print / PDF report ----
+  document.querySelectorAll('[data-print]').forEach(function (btn) {
+    btn.addEventListener('click', function () { window.print(); });
+  });
+  window.addEventListener('beforeprint', function () {
+    var d = new Date().toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+    document.querySelectorAll('[data-print-date]').forEach(function (el) { el.textContent = d; });
+    if (window.HP && HP.resizeAll) HP.resizeAll();
   });
 })();

@@ -117,8 +117,7 @@
 
   // ---------- Results ----------
   function bind(name, text) {
-    var el = document.querySelector('[data-bind="' + name + '"]');
-    if (el) el.textContent = text;
+    document.querySelectorAll('[data-bind="' + name + '"]').forEach(function (el) { el.textContent = text; });
   }
 
   function alertText(a) {
@@ -185,6 +184,8 @@
     bind('gap', a.facilities_to_close_gap > 0
       ? 'gap ≈ ' + fmt.num(Math.ceil(a.facilities_to_close_gap)) + ' facilities of that size' : 'demand fully covered');
     bind('facility-cov', fmt.pct(a.facility_coverage, 2));
+    bind('need', fmt.t(sim.capacity_needed_t));
+    bind('need-thr', fmt.t(sim.capacity_needed_threshold_t));
 
     $('fc-rows').innerHTML = a.forecast.rows.map(function (r) {
       return '<tr><td><strong>' + r.season + '</strong></td><td class="r">' + fmt.tFull(r.production_t) + '</td><td class="r muted">' +
@@ -352,6 +353,9 @@
   window.addEventListener('beforeunload', function (e) {
     if (dirty && planId) { e.preventDefault(); e.returnValue = ''; }
   });
+
+  // Lets the assistant read what's on screen.
+  window.CF_getPlan = readState;
 
   // ---------- Start ----------
   var fromHash = location.hash.indexOf('#d=') === 0 ? decode(location.hash.slice(3)) : null;

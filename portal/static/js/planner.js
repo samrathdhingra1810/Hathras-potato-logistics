@@ -61,6 +61,8 @@
       ? 'gap ≈ ' + fmt.num(Math.ceil(s.facilities_to_close_gap)) + ' facilities your size'
       : 'demand fully covered');
     bind('facility-cov', fmt.pct(s.facility_coverage, 2));
+    bind('need', fmt.t(sim.capacity_needed_t));
+    bind('need-thr', fmt.t(sim.capacity_needed_threshold_t));
 
     var rows = sim.months.filter(function (m) { return m.peak_harvest; }).map(function (m) {
       return '<tr><td><strong>' + m.month + '</strong></td><td class="r">' + fmt.t(m.intake) + '</td><td class="r">' +

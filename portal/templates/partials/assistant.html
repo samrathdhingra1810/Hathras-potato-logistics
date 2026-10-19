@@ -1,0 +1,35 @@
+<button class="ask-fab no-print" type="button" data-open-assistant aria-controls="assistant" aria-expanded="false">
+  <span aria-hidden="true">✦</span><span class="ask-fab-txt">Ask ColdFlow</span>
+</button>
+<aside class="assistant no-print" id="assistant" role="dialog" aria-modal="false" aria-labelledby="assistant-title" hidden>
+  <header class="assistant-head">
+    <div class="assistant-id">
+      <span class="assistant-mark" aria-hidden="true">✦</span>
+      <div>
+        <strong id="assistant-title">ColdFlow Assistant</strong>
+        <span class="assistant-mode" data-mode>Ready</span>
+      </div>
+    </div>
+    <div class="assistant-actions">
+      <button type="button" class="icon-btn sm" data-assistant-reset aria-label="New conversation" title="New conversation">↺</button>
+      <button type="button" class="icon-btn sm" data-assistant-close aria-label="Close assistant">✕</button>
+    </div>
+  </header>
+  <div class="assistant-log" id="assistant-log" aria-live="polite">
+    <div class="msg bot intro">
+      <p>Hi! I can answer questions about potato production, forecasts and cold storage capacity, using ColdFlow's own numbers. On the Plan page I can also read the figures you've entered.</p>
+    </div>
+    <div class="assistant-suggest" data-suggest>
+      <button type="button" data-ask="Will Hathras run short of cold storage this season?">Will Hathras run short of storage?</button>
+      <button type="button" data-ask="How much capacity would Hathras need in 2025-26?">Capacity needed in 2025-26</button>
+      <button type="button" data-ask="Explain how ColdFlow's forecast works in simple terms.">How does the forecast work?</button>
+      <button type="button" data-ask="Analyse the plan on my screen and tell me the risks.">Analyse my plan</button>
+    </div>
+  </div>
+  <form class="assistant-form" data-assistant-form>
+    <label for="assistant-input" class="sr-only">Message</label>
+    <textarea id="assistant-input" rows="1" maxlength="2000" placeholder="Ask about storage, forecasts, your plan…"></textarea>
+    <button class="btn btn-primary btn-sm" type="submit" aria-label="Send">↑</button>
+  </form>
+  <p class="assistant-foot">AI answers can be wrong. Check important figures in the tools.</p>
+</aside>

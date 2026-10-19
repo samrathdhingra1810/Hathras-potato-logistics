@@ -36,6 +36,7 @@ python3 -m venv .venv
 | `GET` or `POST /api/scenario` | `season, capacity, ratio, threshold, facility` → full storage simulation and block strain |
 | `POST /api/analyse` | Your own data → forecast, simulation and warnings (422 with `errors` if invalid) |
 | `GET/POST /api/plans`, `PUT /api/plans/<id>` | Saved plans for the signed-in user (needs `X-CSRF-Token`) |
+| `POST /api/assistant` | `{messages, context}` → assistant reply (`mode`: `ai` or `offline`) |
 | `GET /data/production.csv` | District series as CSV |
 
 ## Layout
@@ -60,6 +61,10 @@ react-version/          Earlier React/Vite dashboard, kept for reference
 ## Data provenance
 
 The district area, production and yield series (2018-19 to 2023-24) is as supplied in the project brief; cross-check it against UP Directorate of Horticulture or DES releases. District cold storage capacity (950,000 t), the monthly intake and release profiles, and the block split are **planning assumptions**, labelled as such on the site.
+
+## AI assistant
+
+The ✦ Ask ColdFlow panel (on every page, plus the home page's ask bar and ⌘K palette) calls `POST /api/assistant`. With `ANTHROPIC_API_KEY` set, it uses Claude (`claude-opus-5-5`, low effort, server-side refusal fallback) with three tools that run ColdFlow's own engine: Hathras overview, Hathras what-if scenarios, and analysis of any seasons (including the plan on screen). Without a key it answers common questions from built-in rules and labels itself "Offline help". Requests are capped at 20 per 10 minutes per IP per server instance.
 
 ## Accounts in production
 

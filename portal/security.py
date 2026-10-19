@@ -19,7 +19,7 @@ def csrf_token() -> str:
 
 
 # Pure computation endpoints: they change no state and read no account data.
-CSRF_EXEMPT = {"api_analyse", "api_scenario"}
+CSRF_EXEMPT = {"api_analyse", "api_scenario", "api_assistant"}
 
 
 def check_csrf():

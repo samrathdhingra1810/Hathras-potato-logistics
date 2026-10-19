@@ -45,6 +45,7 @@
         {% endif %}
       </ul>
       <div class="nav-actions">
+        <button class="search-btn" type="button" data-open-palette aria-label="Search and commands (Ctrl or Cmd + K)"><span aria-hidden="true">⌕</span><span class="search-txt">Search</span><kbd>⌘K</kbd></button>
         <button class="icon-btn" type="button" id="theme-toggle" aria-label="Toggle dark mode">◐</button>
         {% if accounts_enabled and g.user %}
           <div class="has-dropdown account-menu">
@@ -123,7 +124,25 @@
   </footer>
   {% endblock %}
 
+  {% include "partials/assistant.html" %}
+  {% include "partials/palette.html" %}
+  <script>
+    window.CF = {
+      accounts: {{ accounts_enabled|tojson }},
+      signedIn: {{ (g.user is not none)|tojson }},
+      routes: {
+        home: "{{ url_for('home') }}", plan: "{{ url_for('plan') }}", hathras: "{{ url_for('hathras') }}",
+        tools: "{{ url_for('tools') }}", production: "{{ url_for('tool_production') }}", forecast: "{{ url_for('tool_forecast') }}",
+        planner: "{{ url_for('tool_planner') }}", map: "{{ url_for('tool_map') }}", data: "{{ url_for('data') }}",
+        csv: "{{ url_for('production_csv') }}", about: "{{ url_for('about') }}", services: "{{ url_for('services') }}",
+        privacy: "{{ url_for('privacy') }}", terms: "{{ url_for('terms') }}", login: "{{ url_for('login') }}",
+        signup: "{{ url_for('signup') }}", dashboard: "{{ url_for('dashboard') }}", account: "{{ url_for('account') }}"
+      }
+    };
+  </script>
   <script src="{{ url_for('static', filename='js/site.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/assistant.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/palette.js') }}" defer></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

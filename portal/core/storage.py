@@ -78,6 +78,10 @@ def simulate_storage_year(*, demand_t, capacity_t, intake_profile, release_profi
         "deficit_months": [m["month"] for m in months if m["overflow"] > 0],
         "alert_months": [m["month"] for m in months if m["peak_harvest"] and m["utilisation"] >= alert_threshold],
         "status": strain_level(peak["utilisation"], alert_threshold),
+        # Capacity at which the season's peak fits: with no deficit, and with peak at the alert threshold.
+        "capacity_needed_t": peak["demanded_stock"],
+        "capacity_needed_threshold_t": peak["demanded_stock"] / alert_threshold if alert_threshold else peak["demanded_stock"],
+        "capacity_gap_t": max(peak["demanded_stock"] - capacity_t, 0.0),
     }
 
 
