@@ -28,6 +28,15 @@
           {{ err('organisation') }}
         </div>
         <div class="form-field">
+          <label for="role">I am a… <span class="opt">(tailors your dashboard)</span></label>
+          <select class="input" id="role" name="role">
+            <option value="">Choose your role</option>
+            <option value="owner" {% if form.role == 'owner' %}selected{% endif %}>Cold storage owner / operator</option>
+            <option value="fpo" {% if form.role == 'fpo' %}selected{% endif %}>Farmer or FPO</option>
+            <option value="admin" {% if form.role == 'admin' %}selected{% endif %}>District administrator / planner</option>
+          </select>
+        </div>
+        <div class="form-field">
           <label for="password">Password</label>
           <div class="pw-wrap">
             <input class="input-text" id="password" name="password" type="password" autocomplete="new-password" required minlength="8" {{ inv('password') }}>

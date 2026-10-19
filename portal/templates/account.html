@@ -26,6 +26,16 @@
           <input class="input-text" id="organisation" name="organisation" maxlength="120" value="{{ request.form.get('organisation', g.user.organisation) if action == 'profile' else g.user.organisation }}">
           {{ err('organisation') }}
         </div>
+        {% set cur = request.form.get('role', g.user.role) if action == 'profile' else g.user.role %}
+        <div class="form-field">
+          <label for="role">Role <span class="opt">(sets your dashboard workspace)</span></label>
+          <select class="input" id="role" name="role">
+            <option value="" {% if not cur %}selected{% endif %}>Not set</option>
+            <option value="owner" {% if cur == 'owner' %}selected{% endif %}>Cold storage owner / operator</option>
+            <option value="fpo" {% if cur == 'fpo' %}selected{% endif %}>Farmer or FPO</option>
+            <option value="admin" {% if cur == 'admin' %}selected{% endif %}>District administrator / planner</option>
+          </select>
+        </div>
         <div class="form-field">
           <label for="email-ro">Email</label>
           <input class="input-text" id="email-ro" value="{{ g.user.email }}" disabled>

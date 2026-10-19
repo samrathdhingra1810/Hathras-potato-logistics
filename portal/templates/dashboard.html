@@ -1,5 +1,13 @@
 {% extends "base.html" %}
+{% import "macros.html" as m with context %}
 {% block title %}Dashboard · ColdFlow{% endblock %}
+{% block scripts %}
+<script>
+  document.querySelectorAll('[data-ask-ws]').forEach(function (b) {
+    b.addEventListener('click', function () { window.CFAssistant && window.CFAssistant.open(b.dataset.askWs, true); });
+  });
+</script>
+{% endblock %}
 {% block content %}
 <section class="page-head">
   <div class="container plan-banner">
@@ -12,6 +20,12 @@
   </div>
 </section>
 <div class="container stack">
+  {% if ws %}
+  <div class="plan-banner"><h2 style="margin:0">{{ ws.meta.label }} workspace</h2><a class="small" href="{{ url_for('workspace', role=role) }}">Open full workspace →</a></div>
+  {% include "partials/workspace_body.html" %}
+  {% else %}
+  <div class="notice">Choose your role in <a href="{{ url_for('account') }}">Account settings</a> to get a workspace tailored to cold storage owners, farmers/FPOs or district administrators.</div>
+  {% endif %}
   <div class="card">
     <div class="card-head"><div><h2>Your plans</h2><p>Most recently updated first</p></div></div>
     {% if plans %}

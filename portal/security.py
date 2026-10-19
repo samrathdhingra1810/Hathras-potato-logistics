@@ -19,7 +19,7 @@ def csrf_token() -> str:
 
 
 # Pure computation endpoints: they change no state and read no account data.
-CSRF_EXEMPT = {"api_analyse", "api_scenario", "api_assistant"}
+CSRF_EXEMPT = {"api_analyse", "api_scenario", "api_assistant", "api_import", "api_export"}
 
 
 def check_csrf():
@@ -48,7 +48,7 @@ def load_user():
     if uid is None or not db.accounts_enabled():
         return
     try:
-        g.user = db.get_db().one("SELECT id, email, name, organisation, created_at FROM users WHERE id = ?", (uid,))
+        g.user = db.get_db().one("SELECT id, email, name, organisation, role, created_at FROM users WHERE id = ?", (uid,))
     except Exception:  # database unreachable: behave as logged out rather than 500 on every page
         g.user = None
     if g.user is None:

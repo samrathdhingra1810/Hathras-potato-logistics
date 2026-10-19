@@ -19,6 +19,7 @@ SCHEMA = [
         email TEXT NOT NULL UNIQUE,
         name TEXT NOT NULL,
         organisation TEXT NOT NULL DEFAULT '',
+        role TEXT NOT NULL DEFAULT '',
         password_hash TEXT NOT NULL,
         created_at TEXT NOT NULL
     )""",
@@ -122,6 +123,13 @@ def _ensure_schema(conn: _Conn):
     pk = "SERIAL PRIMARY KEY" if conn.kind == "postgres" else "INTEGER PRIMARY KEY AUTOINCREMENT"
     for stmt in SCHEMA:
         conn.execute(stmt.format(pk=pk))
+    # Columns added after the first release.
+    if conn.kind == "postgres":
+        conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT ''")
+    else:
+        cols = {r["name"] for r in conn.all("PRAGMA table_info(users)")}
+        if "role" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT ''")
     conn.commit()
     done.add(key)
 

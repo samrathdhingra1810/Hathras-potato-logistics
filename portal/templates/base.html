@@ -8,6 +8,9 @@
   <meta property="og:title" content="{{ self.title() }}">
   <meta property="og:description" content="{{ self.description() }}">
   <meta name="theme-color" content="#2a78d6">
+  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/mark.svg') }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" href="{{ url_for('static', filename='img/mark.svg') }}" type="image/svg+xml">
   <script>
     try { var t = localStorage.getItem('theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
@@ -34,6 +37,14 @@
             {% for t in tools %}
             <a href="{{ url_for(t.endpoint) }}" role="menuitem"><strong>{{ t.name }}</strong><span>{{ t.blurb }}</span></a>
             {% endfor %}
+          </div>
+        </li>
+        <li class="has-dropdown">
+          <button class="linkish" type="button" aria-haspopup="true" aria-expanded="false" data-dropdown {% if active == 'workspace' %}aria-current="page"{% endif %}>For you ▾</button>
+          <div class="dropdown" role="menu">
+            <a href="{{ url_for('workspace', role='owner') }}" role="menuitem"><strong>Cold storage owners</strong><span>Utilisation, holding costs, demand</span></a>
+            <a href="{{ url_for('workspace', role='fpo') }}" role="menuitem"><strong>Farmers &amp; FPOs</strong><span>When to book, where space is left</span></a>
+            <a href="{{ url_for('workspace', role='admin') }}" role="menuitem"><strong>District administrators</strong><span>Deficits, spoilage risk, expansion</span></a>
           </div>
         </li>
         <li><a href="{{ url_for('data') }}" {% if active == 'data' %}aria-current="page"{% endif %}>Data</a></li>

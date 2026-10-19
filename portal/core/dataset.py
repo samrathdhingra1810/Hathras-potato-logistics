@@ -38,6 +38,10 @@ DEFAULT_REGIONAL_CAPACITY_T = 950_000
 
 DEFAULT_ALERT_THRESHOLD = 0.9
 
+# ASSUMPTIONS for holding economics; both are editable in the planners.
+DEFAULT_KWH_PER_T_MONTH = 9.0      # electricity per tonne held per month
+DEFAULT_TARIFF_RS_KWH = 7.5        # commercial power tariff, ₹ per kWh
+
 # ASSUMPTION: share of the season's storage intake arriving each month.
 # Hathras potatoes are dug late February through March; loading tails into April.
 MONTHLY_INTAKE_PROFILE = {"Feb": 0.18, "Mar": 0.57, "Apr": 0.25}
@@ -66,4 +70,7 @@ ASSUMPTIONS = [
     {"item": "Monthly intake profile", "value": "Feb 18% · Mar 57% · Apr 25%", "status": "Assumption", "note": "Timing of loading into cold storage after digging."},
     {"item": "Monthly release profile", "value": "May–Nov, peaking Sep", "status": "Assumption", "note": "Timing of withdrawals for market and seed."},
     {"item": "Block production & capacity split", "value": "7 blocks", "status": "Assumption", "note": "Modelled shares; markers at approximate block HQ locations."},
+    {"item": "Electricity use", "value": "9 kWh per tonne per month", "status": "Assumption", "note": "Used for holding-cost estimates. Replace with your facility's metered figure."},
+    {"item": "Power tariff", "value": "₹7.5 per kWh", "status": "Assumption", "note": "Replace with your connection's tariff."},
+    {"item": "Distances between blocks", "value": "Straight line", "status": "Approximation", "note": "Road distances are longer; add a road-distance matrix for routing."},
 ]

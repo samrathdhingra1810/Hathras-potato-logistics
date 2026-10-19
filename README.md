@@ -62,6 +62,17 @@ react-version/          Earlier React/Vite dashboard, kept for reference
 
 The district area, production and yield series (2018-19 to 2023-24) is as supplied in the project brief; cross-check it against UP Directorate of Horticulture or DES releases. District cold storage capacity (950,000 t), the monthly intake and release profiles, and the block split are **planning assumptions**, labelled as such on the site.
 
+## Feature notes
+
+- **Import / export:** Excel and CSV templates (`/templates/coldflow-template.xlsx|csv`), `POST /api/import` (CSV or XLSX, including a Settings sheet), `POST /api/export` (Excel report: summary, seasons, both forecasts, monthly storage, blocks, assumptions). PDF via the browser's print.
+- **Forecasting:** linear trend plus damped exponential smoothing (Holt), compared on a two-season backtest. ARIMA is deliberately not used: six seasons is too little history.
+- **What-ifs:** yield change, new capacity, electricity tariff change, and holding power cost (placeholder ₹7.5/kWh and 9 kWh per tonne-month; editable).
+- **Block map:** diverging heatmap by month, click a block for monthly strain and nearest blocks with spare space (straight-line km), distance matrix.
+- **Workspaces:** `/workspace/owner|fpo|admin`; signed-in users pick a role and see it on their dashboard.
+- **Districts:** `portal/core/districts.py`; only Hathras is loaded. Add a district once you have verified figures.
+- **Offline (PWA):** manifest + service worker (`/sw.js`) cache pages and assets; account pages are never cached.
+- **Not connected yet (need real data sources):** other districts' baselines, cold storage facility registry, mandi prices, weather, bookings/inventory.
+
 ## AI assistant
 
 The ✦ Ask ColdFlow panel (on every page, plus the home page's ask bar and ⌘K palette) calls `POST /api/assistant`. With `GEMINI_API_KEY` set as an environment variable, it uses Google Gemini (`gemini-3.8-flash`; override with `GEMINI_MODEL`) with three function tools that run ColdFlow's own engine: Hathras overview, Hathras what-if scenarios, and analysis of any seasons (including the plan on screen). Without a key it answers common questions from built-in rules and labels itself "Offline help". Requests are capped at 20 per 10 minutes per IP per server instance. Never commit the key; set it in Vercel → Settings → Environment Variables.

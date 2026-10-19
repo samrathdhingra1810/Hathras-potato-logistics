@@ -5,12 +5,15 @@ import csv
 import io
 import json
 
-from flask import Response, g, render_template, request
+from flask import Response, abort, current_app, g, jsonify, render_template, request, send_from_directory
 
 from . import db
 from .core import dataset as ds
-from .core.analytics import forecast_series, with_yoy
+from .core.analytics import compare_models, forecast_series, with_yoy
 from .core.custom import hathras_example
+from .core.geo import distance_matrix
+from .core import districts
+from .roles import ROLES, workspace_data
 from .scenario import hathras_scenario
 
 
@@ -37,7 +40,8 @@ def init_app(app):
     @app.get("/tools/forecast")
     def tool_forecast():
         return render_template("tools/forecast.html", series=with_yoy(ds.PRODUCTION_SERIES),
-                               forecast=forecast_series(ds.PRODUCTION_SERIES, 2))
+                               forecast=forecast_series(ds.PRODUCTION_SERIES, 2),
+                               compare=compare_models(ds.PRODUCTION_SERIES, 2))
 
     @app.get("/tools/planner")
     def tool_planner():
@@ -45,7 +49,8 @@ def init_app(app):
 
     @app.get("/tools/map")
     def tool_map():
-        return render_template("tools/map.html", scenario=hathras_scenario(request.args))
+        return render_template("tools/map.html", scenario=hathras_scenario(request.args),
+                               distances=distance_matrix(ds.BLOCKS))
 
     @app.get("/plan")
     def plan():
@@ -59,7 +64,27 @@ def init_app(app):
                 saved = {"id": row["id"], "name": row["name"], "updated_at": row["updated_at"],
                          "payload": json.loads(row["payload"])}
         return render_template("plan.html", example=hathras_example(), saved=saved,
-                               accounts=db.accounts_enabled())
+                               accounts=db.accounts_enabled(), districts=districts.listing())
+
+    @app.get("/workspace")
+    @app.get("/workspace/<role>")
+    def workspace(role=None):
+        if role is None:
+            role = (g.user or {}).get("role") or "owner"
+        if role not in ROLES:
+            abort(404)
+        return render_template("workspace.html", ws=workspace_data(role), roles=ROLES)
+
+    @app.get("/api/districts")
+    def api_districts():
+        return jsonify(districts.listing())
+
+    @app.get("/api/districts/<district_id>")
+    def api_district(district_id):
+        p = districts.payload_for(district_id)
+        if p is None:
+            return jsonify(error="No verified dataset is loaded for that district yet."), 404
+        return jsonify(p)
 
     @app.get("/data")
     def data():
@@ -83,6 +108,23 @@ def init_app(app):
     @app.get("/services")
     def services():
         return render_template("services.html")
+
+    @app.get("/manifest.webmanifest")
+    def manifest():
+        return send_from_directory(current_app.static_folder, "manifest.webmanifest",
+                                   mimetype="application/manifest+json")
+
+    @app.get("/sw.js")
+    def service_worker():
+        # Served from the root so it can control every page.
+        resp = send_from_directory(current_app.static_folder, "sw.js", mimetype="application/javascript")
+        resp.headers["Cache-Control"] = "no-cache"
+        resp.headers["Service-Worker-Allowed"] = "/"
+        return resp
+
+    @app.get("/offline")
+    def offline():
+        return render_template("offline.html")
 
     @app.get("/privacy")
     def privacy():

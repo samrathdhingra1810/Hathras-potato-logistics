@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block title %}{{ ws.meta.label }} workspace · ColdFlow{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / Workspaces</div>
+    <h1>{{ ws.meta.label }} workspace</h1>
+    <p class="lead" style="max-width:720px">{{ ws.meta.tagline }} Built on the Hathras example.</p>
+  </div>
+</section>
+<div class="container stack">
+  <nav class="tool-tabs" aria-label="Workspaces">
+    {% for key, r in roles.items() %}
+    <a href="{{ url_for('workspace', role=key) }}" {% if key == ws.role %}aria-current="page"{% endif %}>{{ r.short }}</a>
+    {% endfor %}
+  </nav>
+  {% include "partials/workspace_body.html" %}
+  {% if accounts_enabled and not g.user %}
+  <p class="small muted">Create an account and choose your role to see this workspace on your dashboard. <a href="{{ url_for('signup') }}">Create account →</a></p>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.querySelectorAll('[data-ask-ws]').forEach(function (b) {
+    b.addEventListener('click', function () { window.CFAssistant && window.CFAssistant.open(b.dataset.askWs, true); });
+  });
+</script>
+{% endblock %}

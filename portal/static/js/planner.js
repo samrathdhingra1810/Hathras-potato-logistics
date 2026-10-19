@@ -6,7 +6,7 @@
   var ICONS = { good: '●', warning: '▲', serious: '◆', critical: '■' };
   var LABELS = { good: 'Adequate', warning: 'Watch', serious: 'Strained', critical: 'Deficit' };
   var form = document.getElementById('planner-form');
-  var inputs = ['season', 'capacity', 'ratio', 'threshold', 'facility'].reduce(function (o, k) {
+  var inputs = ['season', 'capacity', 'ratio', 'threshold', 'facility', 'yield_shock', 'extra_capacity', 'tariff_change', 'tariff', 'kwh'].reduce(function (o, k) {
     o[k] = document.getElementById(k); return o;
   }, {});
 
@@ -22,6 +22,7 @@
     document.querySelector('[data-out="ratio"]').textContent = fmt.pct(+inputs.ratio.value, 0);
     document.querySelector('[data-out="threshold"]').textContent = fmt.pct(+inputs.threshold.value, 0);
     document.querySelector('[data-out="facility"]').textContent = fmt.num(+inputs.facility.value) + ' t';
+    HP.whatifOutputs();
   }
 
   function alertText(s) {
@@ -62,6 +63,7 @@
       : 'demand fully covered');
     bind('facility-cov', fmt.pct(s.facility_coverage, 2));
     bind('need', fmt.t(sim.capacity_needed_t));
+    HP.renderEconomics(s, bind);
     bind('need-thr', fmt.t(sim.capacity_needed_threshold_t));
 
     var rows = sim.months.filter(function (m) { return m.peak_harvest; }).map(function (m) {
@@ -104,6 +106,13 @@
     inputs.season.selectedIndex = 0;
     Object.keys(d.defaults).forEach(function (k) { inputs[k].value = d.defaults[k]; });
     refresh();
+  });
+
+  document.querySelectorAll('[data-export="hathras"]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var p = {}; Object.keys(inputs).forEach(function (k) { p[k] = inputs[k].value; });
+      HP.exportXlsx({ kind: 'hathras', params: p }, b);
+    });
   });
 
   showOutputs();

@@ -18,6 +18,56 @@
   };
 
   var nf0 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+  /** ₹ in Indian units: 1.2 crore, 3.4 lakh, 12,000. */
+  HP.rs = function (v) {
+    if (v == null || !isFinite(v)) return '—';
+    var a = Math.abs(v);
+    if (a >= 1e7) return '₹' + (v / 1e7).toFixed(2) + ' crore';
+    if (a >= 1e5) return '₹' + (v / 1e5).toFixed(2) + ' lakh';
+    return '₹' + nf0.format(v);
+  };
+
+  /** Labels for the what-if sliders (same ids on both planners). */
+  HP.whatifOutputs = function () {
+    var set = function (k, t) { var el = document.querySelector('[data-out="' + k + '"]'); if (el) el.textContent = t; };
+    var y = document.getElementById('yield_shock'), x = document.getElementById('extra_capacity'), t = document.getElementById('tariff_change');
+    if (y) set('yield_shock', (+y.value > 0 ? '+' : '') + Math.round(+y.value * 100) + '%');
+    if (x) set('extra_capacity', +x.value ? '+' + HP.fmt.t(+x.value) : 'none');
+    if (t) set('tariff_change', (+t.value > 0 ? '+' : '') + Math.round(+t.value * 100) + '%');
+  };
+
+  /** Fills the holding-economics card from an analysis/scenario response. */
+  HP.renderEconomics = function (a, bind) {
+    var e = a.economics;
+    if (!e) return;
+    bind('econ-cost', HP.rs(e.season_cost_rs));
+    bind('econ-rate', '@ ₹' + e.rate_rs_kwh.toFixed(2) + '/kWh');
+    bind('econ-per-t', HP.rs(e.cost_per_t_stored_rs));
+    bind('econ-energy', (e.energy_kwh / 1e6).toFixed(2) + ' GWh');
+    bind('econ-tm', HP.fmt.num(e.tonne_months) + ' tonne-months');
+    bind('shock-prod', HP.fmt.t(a.production_t));
+    var shock = a.inputs.yield_shock || 0;
+    bind('shock-base', shock ? (shock > 0 ? '+' : '') + Math.round(shock * 100) + '% vs ' + HP.fmt.t(a.base_production_t) : 'no yield change');
+  };
+
+  /** Downloads an Excel report from /api/export. */
+  HP.exportXlsx = function (body, btn) {
+    var label = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Preparing…'; }
+    return fetch('/api/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) {
+        if (!r.ok) return r.json().then(function (j) { throw new Error((j.errors || [j.error])[0]); });
+        var name = (/filename=([^;]+)/.exec(r.headers.get('Content-Disposition') || '') || [])[1] || 'coldflow-report.xlsx';
+        return r.blob().then(function (b) {
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+        });
+      })
+      .catch(function (e) { alert('Could not create the report: ' + e.message); })
+      .then(function () { if (btn) { btn.disabled = false; btn.textContent = label; } });
+  };
+
   HP.fmt = {
     num: function (v) { return v == null ? '—' : nf0.format(v); },
     tFull: function (v) { return v == null ? '—' : nf0.format(v) + ' t'; },
@@ -249,7 +299,7 @@
   /** Monthly stock (blue) + unmet demand (critical) stacked; capacity & threshold lines. */
   HP.storageConfig = function (scenario) {
     var sim = scenario.simulation;
-    var cap = scenario.inputs.capacity;
+    var cap = scenario.inputs.total_capacity || scenario.inputs.capacity;
     var thr = scenario.inputs.threshold;
     var months = sim.months.map(function (m) { return m.month; });
     var o = base();

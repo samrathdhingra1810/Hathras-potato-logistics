@@ -3,6 +3,7 @@
 (function () {
   var d = HP.pageData();
   var fmt = HP.fmt;
+  var WHATIF = ['yield_shock', 'extra_capacity', 'tariff_change', 'tariff', 'kwh'];
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var ICONS = { good: '●', warning: '▲', serious: '◆', critical: '■' };
   var $ = function (id) { return document.getElementById(id); };
@@ -30,6 +31,7 @@
     $('ratio').value = s.ratio;
     $('threshold').value = s.threshold;
     $('facility').value = Math.round(s.facility);
+    WHATIF.forEach(function (k) { if (s[k] != null) $(k).value = s[k]; else if (d.example[k] != null) $(k).value = d.example[k]; });
     setCalendar('intake', s.intake_profile);
     setCalendar('release', s.release_profile);
     chosenSeason = s.season || '';
@@ -83,6 +85,11 @@
       intake_profile: readCalendar('intake'),
       release_profile: readCalendar('release'),
       season: chosenSeason,
+      yield_shock: +$('yield_shock').value,
+      extra_capacity: +$('extra_capacity').value,
+      tariff_change: +$('tariff_change').value,
+      tariff: +$('tariff').value,
+      kwh: +$('kwh').value,
     };
   }
 
@@ -97,6 +104,7 @@
   function showOutputs() {
     document.querySelector('[data-out="ratio"]').textContent = fmt.pct(+$('ratio').value, 0);
     document.querySelector('[data-out="threshold"]').textContent = fmt.pct(+$('threshold').value, 0);
+    HP.whatifOutputs();
   }
 
   // ---------- URL hash (shareable state) ----------
@@ -142,9 +150,17 @@
     return analysis ? HP.storageConfig(analysis) : { type: 'bar', data: { labels: [], datasets: [] } };
   });
   var forecastChart = HP.chart('forecast-chart', function () {
-    return analysis ? HP.forecastConfig(analysis.series, analysis.forecast.rows, fcMetric) : { type: 'line', data: { labels: [], datasets: [] } };
+    return analysis ? HP.forecastConfig(analysis.series, fcRows(), fcMetric) : { type: 'line', data: { labels: [], datasets: [] } };
   });
   HP.segmented('fc', function (v) { fcMetric = v; forecastChart.rebuild(); });
+  var fcModel = 'linear';
+  function fcRows() { return fcModel === 'smoothing' ? analysis.forecast_compare.smoothing.rows : analysis.forecast.rows; }
+  HP.segmented('model', function (v) {
+    fcModel = v;
+    bind('fc-desc', v === 'smoothing' ? 'Damped exponential smoothing on your seasons, approximate 95% interval' : 'Linear trend on your seasons, 95% prediction interval');
+    forecastChart.rebuild();
+    renderFcTable();
+  });
 
   function render(a) {
     analysis = a;
@@ -185,15 +201,25 @@
       ? 'gap ≈ ' + fmt.num(Math.ceil(a.facilities_to_close_gap)) + ' facilities of that size' : 'demand fully covered');
     bind('facility-cov', fmt.pct(a.facility_coverage, 2));
     bind('need', fmt.t(sim.capacity_needed_t));
+    HP.renderEconomics(a, bind);
     bind('need-thr', fmt.t(sim.capacity_needed_threshold_t));
 
-    $('fc-rows').innerHTML = a.forecast.rows.map(function (r) {
-      return '<tr><td><strong>' + r.season + '</strong></td><td class="r">' + fmt.tFull(r.production_t) + '</td><td class="r muted">' +
-        fmt.t(r.production_lower) + ' – ' + fmt.t(r.production_upper) + '</td><td class="r">' + fmt.kgha(r.yield_kg_ha) + '</td></tr>';
-    }).join('');
+    renderFcTable();
+    var bt = a.forecast_compare.backtest;
+    bind('fc-backtest', bt.holdout ? 'Backtest on ' + bt.seasons.join(' and ') + ': linear ' + fmt.pct(bt.linear_mape, 1) + ' vs smoothing ' +
+      fmt.pct(bt.smoothing_mape, 1) + ' average error. ' + (a.forecast_compare.recommended === 'smoothing' ? 'Smoothing' : 'Linear') + ' fitted your history better.'
+      : 'Add at least 5 seasons to compare models on your own history.');
 
     storageChart.rebuild();
     forecastChart.rebuild();
+  }
+
+  function renderFcTable() {
+    if (!analysis) return;
+    $('fc-rows').innerHTML = fcRows().map(function (r) {
+      return '<tr><td><strong>' + r.season + '</strong></td><td class="r">' + fmt.tFull(r.production_t) + '</td><td class="r muted">' +
+        fmt.t(r.production_lower) + ' – ' + fmt.t(r.production_upper) + '</td><td class="r">' + fmt.kgha(r.yield_kg_ha) + '</td></tr>';
+    }).join('');
   }
 
   function showErrors(list) {
@@ -228,28 +254,6 @@
   }
 
   // ---------- CSV ----------
-  function parseCsv(text) {
-    var lines = text.replace(/\r/g, '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
-    if (!lines.length) return [];
-    var split = function (l) { return l.split(/[,;\t]/).map(function (c) { return c.trim().replace(/^"|"$/g, ''); }); };
-    var head = split(lines[0]).map(function (h) { return h.toLowerCase(); });
-    var idx = { season: 0, area: 1, prod: 2 };
-    var hasHeader = head.some(function (h) { return /season|area|prod/.test(h); });
-    if (hasHeader) {
-      head.forEach(function (h, i) {
-        if (/season|year/.test(h)) idx.season = i;
-        else if (/area/.test(h)) idx.area = i;
-        else if (/prod|output|harvest/.test(h)) idx.prod = i;
-      });
-      lines = lines.slice(1);
-    }
-    var num = function (v) { return v === undefined || v === '' ? null : +String(v).replace(/[, ]/g, ''); };
-    return lines.map(function (l) {
-      var c = split(l);
-      return { season: c[idx.season], area_ha: num(c[idx.area]), production_t: num(c[idx.prod]) };
-    });
-  }
-
   function toCsv(s) {
     return 'season,area_ha,production_t\n' + s.series.map(function (r) {
       return [r.season, r.area_ha == null ? '' : r.area_ha, r.production_t == null ? '' : r.production_t].join(',');
@@ -315,6 +319,18 @@
     refresh();
   });
   $('load-example').addEventListener('click', function () { setState(d.example); refresh(); });
+  $('district').addEventListener('change', function (e) {
+    var id = e.target.value;
+    if (!id) return;
+    fetch('/api/districts/' + encodeURIComponent(id))
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        if (!res.ok) { showErrors([res.body.error]); return; }
+        var st = readState();
+        st.name = res.body.name; st.series = res.body.series; st.capacity = res.body.capacity;
+        setState(st); refresh();
+      });
+  });
   $('cal-default').addEventListener('click', function () {
     setCalendar('intake', d.example.intake_profile);
     setCalendar('release', d.example.release_profile);
@@ -322,17 +338,28 @@
   });
   $('csv-file').addEventListener('change', function (e) {
     var f = e.target.files[0];
-    if (!f) return;
-    if (f.size > 200 * 1024) { showErrors(['That file is too large. Use a CSV under 200 KB.']); return; }
-    f.text().then(function (text) {
-      var rows = parseCsv(text);
-      if (!rows.length) { showErrors(['No rows found in that CSV.']); return; }
-      $('rows').innerHTML = rows.map(rowHtml).join('');
-      if (!$('plan-name').value.trim()) $('plan-name').value = f.name.replace(/\.csv$/i, '');
-      refresh();
-    });
     e.target.value = '';
+    if (!f) return;
+    if (f.size > 400 * 1024) { showErrors(['That file is too large. Use a file under 400 KB.']); return; }
+    var body = new FormData();
+    body.append('file', f);
+    fetch('/api/import', { method: 'POST', body: body })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        if (!res.ok) { showErrors(res.body.errors || ['Could not read that file.']); return; }
+        if (!res.body.series.length) { showErrors(['No rows found in that file.']); return; }
+        $('rows').innerHTML = res.body.series.map(rowHtml).join('');
+        var st = res.body.settings || {};
+        if (st.capacity) $('capacity').value = Math.round(st.capacity);
+        if (st.ratio) $('ratio').value = st.ratio;
+        if (st.threshold) $('threshold').value = st.threshold;
+        if (st.facility) $('facility').value = Math.round(st.facility);
+        if (!$('plan-name').value.trim() || $('plan-name').value === d.example.name) $('plan-name').value = f.name.replace(/\.(csv|xlsx)$/i, '');
+        refresh();
+      })
+      .catch(function () { showErrors(['Could not upload that file. Check your connection.']); });
   });
+  $('export-xlsx').addEventListener('click', function (e) { HP.exportXlsx({ kind: 'plan', payload: readState() }, e.currentTarget); });
   $('download-csv').addEventListener('click', function () {
     var s = readState();
     var blob = new Blob([toCsv(s)], { type: 'text/csv' });

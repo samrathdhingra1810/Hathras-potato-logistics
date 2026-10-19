@@ -3,15 +3,16 @@ from __future__ import annotations
 
 import json
 
-from flask import current_app, g, jsonify, request
+from flask import Response, current_app, g, jsonify, request
 
-from . import assistant, db
+from . import assistant, db, sheets
 from .core import dataset as ds
 from .core.analytics import forecast_series, with_yoy
 from .core.custom import InputError, analyse, validate
 from .scenario import hathras_scenario, num_arg
 
 MAX_PLANS_PER_USER = 50
+XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
 def _require_user():
@@ -56,6 +57,47 @@ def init_app(app):
             return jsonify(analyse(request.get_json(silent=True)))
         except InputError as e:
             return jsonify(errors=e.errors), 422
+
+    # ---- Import / export ----
+    @app.get("/templates/coldflow-template.csv")
+    def template_csv():
+        return Response(sheets.template_csv(), mimetype="text/csv",
+                        headers={"Content-Disposition": "attachment; filename=coldflow-template.csv"})
+
+    @app.get("/templates/coldflow-template.xlsx")
+    def template_xlsx():
+        return Response(sheets.template_xlsx(), mimetype=XLSX,
+                        headers={"Content-Disposition": "attachment; filename=coldflow-template.xlsx"})
+
+    @app.post("/api/import")
+    def api_import():
+        f = request.files.get("file")
+        if f is None:
+            return jsonify(errors=["Choose a .csv or .xlsx file."]), 400
+        try:
+            return jsonify(sheets.parse_upload(f.filename, f.read()))
+        except sheets.ImportError_ as e:
+            return jsonify(errors=[str(e)]), 422
+
+    @app.post("/api/export")
+    def api_export():
+        body = request.get_json(silent=True) or {}
+        kind = body.get("kind")
+        try:
+            if kind == "plan":
+                a = analyse(body.get("payload"))
+                title, blocks = a["name"], None
+            elif kind == "hathras":
+                a = hathras_scenario(body.get("params") or {})
+                a["series"] = with_yoy(ds.PRODUCTION_SERIES)
+                title, blocks = f"Hathras district · {a['inputs']['season']}", a["blocks"]
+            else:
+                return jsonify(errors=["Unknown report type."]), 400
+        except InputError as e:
+            return jsonify(errors=e.errors), 422
+        safe = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in title.lower()).strip("-")[:60] or "report"
+        return Response(sheets.report_xlsx(title, a, blocks=blocks), mimetype=XLSX,
+                        headers={"Content-Disposition": f"attachment; filename=coldflow-{safe}.xlsx"})
 
     @app.post("/api/assistant")
     def api_assistant():

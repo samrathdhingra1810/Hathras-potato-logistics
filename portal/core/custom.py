@@ -10,8 +10,8 @@ import math
 import re
 
 from . import dataset as ds
-from .analytics import forecast_series, summary, with_yoy
-from .storage import facility_coverage, simulate_storage_year, storage_demand, MONTHS
+from .analytics import compare_models, forecast_series, summary, with_yoy
+from .storage import facility_coverage, holding_economics, simulate_storage_year, storage_demand, MONTHS
 
 SEASON_RE = re.compile(r"^(\d{4})-(\d{2})$")
 MIN_SEASONS, MAX_SEASONS = 3, 30
@@ -139,24 +139,33 @@ def analyse(payload: dict) -> dict:
     seasons = {series[-1]["season"]: series[-1]["production_t"]}
     seasons.update({r["season"]: r["production_t"] for r in fc["rows"]})
     season = v["season"] if v["season"] in seasons else series[-1]["season"]
-    production = seasons[season]
+    from ..scenario import whatif_inputs  # local import: scenario imports this module's siblings
+
+    w = whatif_inputs(payload)
+    base_production = seasons[season]
+    production = base_production * (1 + w["yield_shock"])
+    total_capacity = v["capacity"] + w["extra_capacity"]
     demand = storage_demand(production, v["ratio"])
-    sim = simulate_storage_year(demand_t=demand, capacity_t=v["capacity"], alert_threshold=v["threshold"],
+    sim = simulate_storage_year(demand_t=demand, capacity_t=total_capacity, alert_threshold=v["threshold"],
                                 intake_profile=v["intake_profile"], release_profile=v["release_profile"])
     head = summary(series)
     return {
         "name": v["name"],
         "inputs": {**{k: v[k] for k in ("capacity", "ratio", "threshold", "facility", "intake_profile", "release_profile")},
-                   "season": season},
+                   "season": season, **w, "total_capacity": total_capacity},
+        "base_production_t": base_production,
+        "economics": holding_economics(sim, kwh_per_t_month=w["kwh"], tariff_rs_kwh=w["tariff"],
+                                       tariff_change=w["tariff_change"]),
         "seasons": [{"value": s, "label": f"{s} {'actual' if s == series[-1]['season'] else 'forecast'}"} for s in seasons],
         "series": with_yoy(series),
         "summary": {k: head[k] for k in ("cagr", "avg_yield_kg_ha", "area_growth", "yield_growth")},
         "forecast": fc,
+        "forecast_compare": {k: v for k, v in compare_models(series, 2).items() if k != "linear"},
         "production_t": production,
         "demand_t": demand,
         "facility_coverage": facility_coverage(v["facility"], demand),
-        "district_coverage": v["capacity"] / demand if demand else None,
-        "facilities_to_close_gap": max(demand - v["capacity"], 0) / v["facility"],
+        "district_coverage": total_capacity / demand if demand else None,
+        "facilities_to_close_gap": max(demand - total_capacity, 0) / v["facility"],
         "simulation": sim,
         "warnings": v["warnings"],
     }
@@ -174,4 +183,6 @@ def hathras_example() -> dict:
         "facility": 10_000,
         "intake_profile": dict(ds.MONTHLY_INTAKE_PROFILE),
         "release_profile": dict(ds.MONTHLY_RELEASE_PROFILE),
+        "yield_shock": 0, "extra_capacity": 0, "tariff_change": 0,
+        "tariff": ds.DEFAULT_TARIFF_RS_KWH, "kwh": ds.DEFAULT_KWH_PER_T_MONTH,
     }

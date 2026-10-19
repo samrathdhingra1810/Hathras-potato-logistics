@@ -22,13 +22,22 @@
       <label for="plan-name">Plan name</label>
       <input class="input-text" id="plan-name" maxlength="80" placeholder="e.g. Agra district 2025">
     </div>
+    <div class="form-field" style="margin:0;min-width:200px">
+      <label for="district">Start from a district</label>
+      <select class="input" id="district">
+        <option value="">Choose…</option>
+        {% for dd in districts.loaded %}<option value="{{ dd.id }}">{{ dd.name }}, {{ dd.state }}</option>{% endfor %}
+        {% for c in districts.candidates %}<option value="" disabled>{{ c }} (data not loaded yet)</option>{% endfor %}
+      </select>
+    </div>
     <div class="toolbar">
       <button class="btn btn-ghost btn-sm" type="button" id="load-example">Load Hathras example</button>
-      <label class="btn btn-ghost btn-sm" for="csv-file" style="cursor:pointer">Upload CSV</label>
-      <input type="file" id="csv-file" accept=".csv,text/csv" class="sr-only">
+      <label class="btn btn-ghost btn-sm" for="csv-file" style="cursor:pointer">Import CSV / Excel</label>
+      <input type="file" id="csv-file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="sr-only">
       <button class="btn btn-ghost btn-sm" type="button" id="download-csv">Download CSV</button>
       <button class="btn btn-ghost btn-sm" type="button" id="share">Copy share link</button>
       <button class="btn btn-ghost btn-sm" type="button" data-print>⇩ Report (PDF)</button>
+      <button class="btn btn-ghost btn-sm" type="button" id="export-xlsx">⇩ Excel report</button>
       {% if accounts and g.user %}
         <button class="btn btn-primary btn-sm" type="button" id="save">Save plan</button>
       {% elif accounts %}
@@ -52,7 +61,7 @@
           <button class="btn btn-ghost btn-sm" type="button" id="add-row">+ Add season</button>
           <button class="btn btn-ghost btn-sm" type="button" id="clear-rows">Clear</button>
         </div>
-        <p class="xs muted" style="padding:0 20px 14px;margin:0">CSV columns: <code>season, area_ha, production_t</code>, e.g. <code>2023-24, 55200, 1362000</code></p>
+        <p class="xs muted" style="padding:0 20px 14px;margin:0">Columns: <code>season, area_ha, production_t</code>. Templates: <a href="{{ url_for('template_xlsx') }}">Excel</a> · <a href="{{ url_for('template_csv') }}">CSV</a> (the Excel template also carries your storage settings).</p>
       </div>
 
       <div class="card">
@@ -75,6 +84,10 @@
             <input class="num-input" id="facility" type="number" min="1" step="500" inputmode="numeric">
           </div>
         </div>
+        <details class="panel" open>
+          <summary>What-if &amp; holding costs</summary>
+          <div>{% with w = {'yield_shock': 0, 'extra_capacity': 0, 'tariff_change': 0, 'tariff': 7.5, 'kwh': 9}, extra_max = 500000, extra_step = 1000 %}{% include "partials/whatif.html" %}{% endwith %}</div>
+        </details>
         <details class="panel" id="calendar">
           <summary>Harvest calendar</summary>
           <div>
@@ -139,15 +152,24 @@
           </div>
         </div>
 
+        {% include "partials/economics.html" %}
+
         <div class="card">
           <div class="card-head">
-            <div><h2>Harvest forecast</h2><p>Linear trend on your seasons, 95% prediction interval</p></div>
+            <div><h2>Harvest forecast</h2><p data-bind="fc-desc">Linear trend on your seasons, 95% prediction interval</p></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div class="seg" role="radiogroup" aria-label="Forecast model" data-seg="model">
+              <button type="button" role="radio" aria-checked="true" data-value="linear">Linear</button>
+              <button type="button" role="radio" aria-checked="false" data-value="smoothing">Smoothing</button>
+            </div>
             <div class="seg" role="radiogroup" aria-label="Forecast metric" data-seg="fc">
               <button type="button" role="radio" aria-checked="true" data-value="production">Production</button>
               <button type="button" role="radio" aria-checked="false" data-value="yield">Yield</button>
             </div>
+            </div>
           </div>
           <div class="card-body">
+            <p class="small" style="margin:0 0 10px" data-bind="fc-backtest"></p>
             <ul class="legend">
               <li><span class="sw" style="--c:var(--series-1)"></span>Your data</li>
               <li><span class="sw dash" style="--c:var(--series-1)"></span>Forecast</li>

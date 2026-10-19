@@ -35,24 +35,67 @@
     <div><span class="tag">Block split is modelled</span></div>
   </div>
 
+  <div class="card card-body heat-bar">
+    <div>
+      <strong class="small">Heatmap month</strong>
+      <div class="seg" role="radiogroup" aria-label="Heatmap month" data-seg="month" style="margin-top:6px">
+        <button type="button" role="radio" aria-checked="true" data-value="peak">Peak</button>
+        <button type="button" role="radio" aria-checked="false" data-value="Feb">Feb</button>
+        <button type="button" role="radio" aria-checked="false" data-value="Mar">Mar</button>
+        <button type="button" role="radio" aria-checked="false" data-value="Apr">Apr</button>
+        <button type="button" role="radio" aria-checked="false" data-value="May">May</button>
+        <button type="button" role="radio" aria-checked="false" data-value="Jul">Jul</button>
+      </div>
+    </div>
+    <div class="heat-legend" aria-label="Colour scale">
+      <span class="xs muted">Surplus</span>
+      <span class="heat-scale" aria-hidden="true"></span>
+      <span class="xs muted">Deficit</span>
+      <div class="heat-ticks xs muted"><span>40%</span><span>100% full</span><span>160%</span></div>
+    </div>
+  </div>
+
   <div class="split split-3-2-map">
     <div class="card card-body">
       <div class="map" id="map" role="region" aria-label="Map of Hathras development blocks"></div>
-      <p class="chart-note">Circle size ∝ storage demand; colour = strain level. Markers sit at approximate block HQ locations.</p>
+      <p class="chart-note">Click a block for details. Colour = storage demand ÷ local capacity in the chosen month (blue spare, grey full, red short); size ∝ demand.</p>
     </div>
-    <div class="card">
-      <div class="card-head"><div><h3>Blocks ranked by strain</h3><p data-bind="caption">{{ i.season }} · capacity {{ i.capacity|tonnes }}</p></div></div>
-      <div class="table-wrap">
-        <table class="table">
-          <thead><tr><th>Block</th><th class="r">Demand</th><th class="r">Capacity</th><th class="r">Util.</th><th class="r">Status</th></tr></thead>
-          <tbody id="block-rows"></tbody>
-        </table>
+    <div class="stack">
+      <div class="card" id="block-detail" hidden>
+        <div class="card-head"><div><h3 data-bind="bd-name"></h3><p data-bind="bd-sub"></p></div><button type="button" class="icon-btn sm" data-bd-close aria-label="Close block details">✕</button></div>
+        <div class="card-body">
+          <dl class="mini-stats" style="margin:0 0 14px">
+            <div><dt>Storage demand</dt><dd data-bind="bd-demand"></dd></div>
+            <div><dt>Local capacity</dt><dd data-bind="bd-capacity"></dd></div>
+            <div><dt>Gap</dt><dd data-bind="bd-gap"></dd></div>
+          </dl>
+          <p class="small" style="margin:0 0 6px"><strong>Month by month</strong></p>
+          <div class="bd-months" data-bind-html="bd-months"></div>
+          <p class="small" style="margin:14px 0 6px"><strong>Nearest blocks with spare space</strong> <span class="xs muted">(straight-line)</span></p>
+          <ul class="bd-near" data-bind-html="bd-near"></ul>
+          <p class="small" style="margin:14px 0 6px"><strong>Cold storage facilities</strong></p>
+          <p class="xs muted" style="margin:0">No facility registry is loaded for this block yet. Add the UP Horticulture cold storage list (name, capacity, contact, occupancy) to show individual stores here.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h3>Blocks ranked by strain</h3><p data-bind="caption">{{ i.season }} · capacity {{ i.capacity|tonnes }}</p></div></div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Block</th><th class="r">Demand</th><th class="r">Capacity</th><th class="r">Util.</th><th class="r">Status</th></tr></thead>
+            <tbody id="block-rows"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
+
+  <details class="card">
+    <summary class="card-head" style="cursor:pointer;list-style:none"><div><h3>Distance matrix</h3><p>Straight-line km between block HQs. Road distances are longer.</p></div><span class="xs muted">Show ▾</span></summary>
+    <div class="table-wrap"><table class="table" id="dist-table"></table></div>
+  </details>
   <div class="notice">District demand and capacity are split across blocks with modelled shares. Replace them with block-level production and the cold storage registry to make this layer authoritative.</div>
 </div>
-{{ m.page_data({'scenario': s, 'center': district.center}) }}
+{{ m.page_data({'scenario': s, 'center': district.center, 'distances': distances}) }}
 {% endblock %}
 
 {% block scripts %}

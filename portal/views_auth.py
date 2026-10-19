@@ -7,6 +7,7 @@ from flask import abort, flash, g, redirect, render_template, request, session, 
 from werkzeug.security import check_password_hash, generate_password_hash as _gen_hash
 
 from . import db
+from .roles import ROLES, workspace_data
 from .security import login_required, safe_next
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -41,7 +42,7 @@ def init_app(app):
             return resp
         if g.user:
             return redirect(url_for("dashboard"))
-        form = {"name": "", "email": "", "organisation": ""}
+        form = {"name": "", "email": "", "organisation": "", "role": ""}
         errors = {}
         if request.method == "POST":
             form = {k: (request.form.get(k) or "").strip() for k in form}
@@ -56,6 +57,8 @@ def init_app(app):
                 errors["email"] = "Enter a valid email address."
             if len(form["organisation"]) > 120:
                 errors["organisation"] = "Keep this under 120 characters."
+            if form["role"] not in ROLES:
+                form["role"] = ""
             if len(password) < MIN_PASSWORD:
                 errors["password"] = f"Use at least {MIN_PASSWORD} characters."
             elif password != confirm:
@@ -67,8 +70,8 @@ def init_app(app):
                 errors["email"] = "An account with this email already exists. Log in instead."
             if not errors:
                 uid = conn.insert(
-                    "INSERT INTO users (email, name, organisation, password_hash, created_at) VALUES (?, ?, ?, ?, ?)",
-                    (form["email"], form["name"], form["organisation"], generate_password_hash(password), db.now()))
+                    "INSERT INTO users (email, name, organisation, role, password_hash, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                    (form["email"], form["name"], form["organisation"], form["role"], generate_password_hash(password), db.now()))
                 conn.commit()
                 _start_session(uid, remember=True)
                 flash(f"Welcome to ColdFlow, {form['name'].split()[0]}.", "success")
@@ -105,7 +108,9 @@ def init_app(app):
     def dashboard():
         plans = db.get_db().all(
             "SELECT id, name, created_at, updated_at FROM plans WHERE user_id = ? ORDER BY updated_at DESC", (g.user["id"],))
-        return render_template("dashboard.html", plans=plans)
+        role = g.user.get("role") or ""
+        ws = workspace_data(role) if role in ROLES else None
+        return render_template("dashboard.html", plans=plans, role=role, ws=ws, roles=ROLES)
 
     @app.post("/plans/<int:plan_id>/delete")
     @login_required
@@ -128,12 +133,14 @@ def init_app(app):
         if action == "profile":
             name = (request.form.get("name") or "").strip()
             org = (request.form.get("organisation") or "").strip()
+            role = request.form.get("role") or ""
+            role = role if role in ROLES else ""
             if not name or len(name) > 80:
                 errors["name"] = "Enter a name under 80 characters."
             if len(org) > 120:
                 errors["organisation"] = "Keep this under 120 characters."
             if not errors:
-                conn.execute("UPDATE users SET name = ?, organisation = ? WHERE id = ?", (name, org, g.user["id"]))
+                conn.execute("UPDATE users SET name = ?, organisation = ?, role = ? WHERE id = ?", (name, org, role, g.user["id"]))
                 conn.commit()
                 flash("Profile updated.", "success")
                 return redirect(url_for("account"))

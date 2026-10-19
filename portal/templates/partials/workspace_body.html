@@ -1,0 +1,62 @@
+{# Role workspace content. Needs `ws` from roles.workspace_data() and macros `m`. #}
+{% set sc = ws.scenario %}{% set sim = sc.simulation %}{% set econ = sc.economics %}
+<div class="grid grid-4">
+  {% if ws.role == 'owner' %}
+    {{ m.kpi('District peak utilisation', sim.peak_utilisation|pct(0), None, None, None, 'in ' ~ sim.peak_month ~ ' · ' ~ sc.inputs.season) }}
+    {{ m.kpi('Storage demand', sc.demand_t|tonnes, None, None, None, 'customers needing space this season') }}
+    {{ m.kpi('Power cost per tonne', '₹' ~ (econ.cost_per_t_stored_rs|num), None, None, None, 'at ₹' ~ econ.rate_rs_kwh ~ '/kWh (placeholder)') }}
+    {{ m.kpi('Unserved demand', sim.total_overflow_t|tonnes, None, None, None, 'produce looking for space') }}
+  {% elif ws.role == 'fpo' %}
+    {{ m.kpi('Book space before', ws.book_before or '—', None, None, None, 'when district storage passes the watch level') }}
+    {{ m.kpi('Next harvest forecast', ws.next_forecast.production_t|tonnes, None, None, None, ws.next_forecast.season ~ ' · ' ~ ('smoothing' if ws.forecast_model == 'smoothing' else 'linear') ~ ' model') }}
+    {{ m.kpi('5-year average harvest', ws.five_year_avg_t|tonnes, None, None, None, 'for comparison') }}
+    {{ m.kpi('Without cold storage', sim.total_overflow_t|tonnes, None, None, None, 'risk of distress sales') }}
+  {% else %}
+    {{ m.kpi('District status', {'good': 'Adequate', 'warning': 'Watch', 'serious': 'Strained', 'critical': 'Deficit'}[sim.status], None, None, None, 'peak ' ~ (sim.peak_utilisation|pct(0)) ~ ' in ' ~ sim.peak_month) }}
+    {{ m.kpi('Produce at spoilage risk', ws.spoilage_risk_t|tonnes, None, None, None, 'no cold-chain slot at peak') }}
+    {{ m.kpi('Capacity to add', ([ws.expansion_t, 0]|max)|tonnes, None, None, None, 'to keep peak under the ' ~ (sc.inputs.threshold|pct(0)) ~ ' alert level') }}
+    {{ m.kpi('Blocks in deficit', (sc.blocks|selectattr('level', 'equalto', 'critical')|list|length) ~ ' of ' ~ (sc.blocks|length), None, None, None, 'at current capacity') }}
+  {% endif %}
+</div>
+
+<div class="split split-1-1" style="margin-top:16px">
+  <div class="card">
+    {% if ws.role == 'fpo' %}
+      <div class="card-head"><div><h3>Where storage is still available</h3><p>Blocks with the most spare capacity at peak</p></div></div>
+      <div class="table-wrap"><table class="table"><thead><tr><th>Block</th><th class="r">Spare</th><th class="r">Peak use</th></tr></thead><tbody>
+        {% for b in ws.most_spare %}<tr><td><strong>{{ b.name }}</strong></td><td class="r">{{ b.gap_t|tonnes }}</td><td class="r">{{ b.utilisation|pct(0) }}</td></tr>
+        {% else %}<tr><td colspan="3" class="muted">No block has spare capacity at peak.</td></tr>{% endfor %}
+      </tbody></table></div>
+    {% else %}
+      <div class="card-head"><div><h3>Highest shortage risk</h3><p>Blocks with the most strain at peak</p></div></div>
+      <div class="table-wrap"><table class="table"><thead><tr><th>Block</th><th class="r">Peak use</th><th class="r">Gap</th></tr></thead><tbody>
+        {% for b in ws.most_strained %}<tr><td><strong>{{ b.name }}</strong></td><td class="r">{{ b.utilisation|pct(0) }}</td><td class="r">{{ b.gap_t|tonnes }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    {% endif %}
+  </div>
+  <div class="card card-body">
+    <h3>Ask the assistant</h3>
+    <div class="assistant-suggest" style="margin-top:10px">
+      {% for p in ws.meta.prompts %}<button type="button" data-ask-ws="{{ p }}">{{ p }}</button>{% endfor %}
+    </div>
+    <h3 style="margin-top:18px">Your tools</h3>
+    <ul class="check-list">
+      {% if ws.role == 'owner' %}
+      <li><a href="{{ url_for('tool_planner') }}">Capacity planner</a>: utilisation by month, power tariff what-ifs</li>
+      <li><a href="{{ url_for('plan') }}">Plan your data</a>: model your own facility's catchment</li>
+      {% elif ws.role == 'fpo' %}
+      <li><a href="{{ url_for('tool_map') }}">Block map</a>: nearest blocks with spare space</li>
+      <li><a href="{{ url_for('tool_forecast') }}">Harvest forecast</a>: next season vs past seasons</li>
+      {% else %}
+      <li><a href="{{ url_for('tool_map') }}">Block map</a>: deficit heatmap by month</li>
+      <li><a href="{{ url_for('tool_planner') }}">Capacity planner</a>: test new capacity and yield shocks, export Excel</li>
+      {% endif %}
+    </ul>
+  </div>
+</div>
+
+<div class="notice" style="margin-top:16px">
+  {% if ws.role == 'owner' %}Inventory, advance-booking and metered power data aren't connected yet. Holding costs use placeholder tariff and energy figures.
+  {% elif ws.role == 'fpo' %}Mandi price trends aren't connected yet (they need an AGMARKNET / data.gov.in data source). Storage figures use the Hathras planning assumptions.
+  {% else %}Figures use the Hathras dataset and planning assumptions (capacity, calendar, block split). Load the cold storage registry for an authoritative view.{% endif %}
+</div>

@@ -86,8 +86,21 @@
     e.preventDefault();
     window.CF.navigate(a.href, a.classList.contains('tile') ? a : null);
   });
+  // An interrupted transition (fast double navigation) is harmless; don't surface it as an error.
+  ['pageswap', 'pagereveal'].forEach(function (ev) {
+    window.addEventListener(ev, function (e) {
+      if (e.viewTransition) ['ready', 'finished', 'updateCallbackDone'].forEach(function (k) { e.viewTransition[k].catch(function () {}); });
+    });
+  });
   // Restore after back/forward cache.
   window.addEventListener('pageshow', function () { document.body.classList.remove('is-leaving'); });
+
+  // ---- Offline support (PWA) ----
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+  }
+  function netBadge() { document.documentElement.classList.toggle('is-offline', !navigator.onLine); }
+  window.addEventListener('online', netBadge); window.addEventListener('offline', netBadge); netBadge();
 
   // ---- Print / PDF report ----
   document.querySelectorAll('[data-print]').forEach(function (btn) {

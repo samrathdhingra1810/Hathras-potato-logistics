@@ -1,0 +1,27 @@
+{# What-if levers shared by the Hathras planner and the own-data planner. `w` holds current values. #}
+<div class="whatif">
+  <p class="whatif-title"><strong>What if…</strong> <span class="xs muted">test shocks before they happen</span></p>
+  <div class="field">
+    <div class="field-top"><label for="yield_shock">Yield change (rain, heat, blight)</label><output data-out="yield_shock"></output></div>
+    <input type="range" id="yield_shock" name="yield_shock" min="-0.4" max="0.2" step="0.01" value="{{ w.yield_shock }}">
+  </div>
+  <div class="field">
+    <div class="field-top"><label for="extra_capacity">New cold storage capacity</label><output data-out="extra_capacity"></output></div>
+    <input type="range" id="extra_capacity" name="extra_capacity" min="0" max="{{ extra_max|default(300000) }}" step="{{ extra_step|default(5000) }}" value="{{ w.extra_capacity|int }}">
+  </div>
+  <div class="field">
+    <div class="field-top"><label for="tariff_change">Electricity tariff change</label><output data-out="tariff_change"></output></div>
+    <input type="range" id="tariff_change" name="tariff_change" min="-0.2" max="1" step="0.01" value="{{ w.tariff_change }}">
+  </div>
+  <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
+    <div class="form-field" style="margin:0">
+      <label for="tariff">Tariff (₹/kWh)</label>
+      <input class="num-input" id="tariff" name="tariff" type="number" min="0.1" max="100" step="0.1" value="{{ w.tariff }}">
+    </div>
+    <div class="form-field" style="margin:0">
+      <label for="kwh">kWh per tonne-month</label>
+      <input class="num-input" id="kwh" name="kwh" type="number" min="0.1" max="100" step="0.1" value="{{ w.kwh }}">
+    </div>
+  </div>
+  <p class="xs muted" style="margin:8px 0 0">Tariff and energy use are placeholders. Enter your own for real costs.</p>
+</div>

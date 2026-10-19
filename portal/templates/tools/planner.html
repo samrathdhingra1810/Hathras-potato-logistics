@@ -9,7 +9,7 @@
     <div class="crumbs"><a href="{{ url_for('hathras') }}">Hathras</a> / <a href="{{ url_for('tools') }}">Tools</a> / Capacity planner</div>
     <h1>Cold storage capacity planner</h1>
     <p class="lead" style="max-width:760px">Load the season's harvest into the district's cold stores month by month and see where capacity runs out. Change the inputs; the link updates so you can share your scenario.</p>
-    <p class="no-print" style="margin:14px 0 0"><button class="btn btn-ghost btn-sm" type="button" data-print>⇩ Download report (PDF)</button></p>
+    <p class="no-print" style="margin:14px 0 0"><button class="btn btn-ghost btn-sm" type="button" data-print>⇩ Report (PDF)</button> <button class="btn btn-ghost btn-sm" type="button" data-export="hathras">⇩ Excel report</button></p>
     <p class="print-only small">ColdFlow report · Hathras capacity planner · <span data-print-date></span></p>
   </div>
 </section>
@@ -41,7 +41,8 @@
         <div class="field-top"><label for="facility">Your facility's capacity</label><output for="facility" data-out="facility"></output></div>
         <input type="range" id="facility" name="facility" min="1000" max="60000" step="500" value="{{ i.facility|int }}">
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
+      {% with w = i %}{% include "partials/whatif.html" %}{% endwith %}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px">
         <span class="tag">Capacity default is an assumption</span>
         <span class="tag">Intake profile is an assumption</span>
       </div>
@@ -76,6 +77,8 @@
         </div>
       </div>
 
+      {% include "partials/economics.html" %}
+
       <div class="card">
         <div class="card-head"><div><h3>Peak-harvest months</h3><p>Where the alert comes from</p></div></div>
         <div class="table-wrap">
@@ -88,7 +91,7 @@
     </div>
   </div>
 </div>
-{{ m.page_data({'scenario': s, 'defaults': {'capacity': 950000, 'ratio': 0.75, 'threshold': 0.9, 'facility': 10000}}) }}
+{{ m.page_data({'scenario': s, 'defaults': {'capacity': 950000, 'ratio': 0.75, 'threshold': 0.9, 'facility': 10000, 'yield_shock': 0, 'extra_capacity': 0, 'tariff_change': 0, 'tariff': 7.5, 'kwh': 9}}) }}
 {% endblock %}
 
 {% block scripts %}

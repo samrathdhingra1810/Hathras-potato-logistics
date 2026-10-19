@@ -1,0 +1,14 @@
+{
+  "name": "ColdFlow · Cold storage planning",
+  "short_name": "ColdFlow",
+  "description": "Forecast the potato crop, match it to cold storage capacity and spot shortfalls early.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f7f9",
+  "theme_color": "#2a78d6",
+  "icons": [
+    { "src": "/static/img/mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/static/img/mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

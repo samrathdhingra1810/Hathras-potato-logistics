@@ -113,3 +113,93 @@ def summary(series: list[dict]) -> dict:
         "area_growth": pct_change(latest["area_ha"], s[0]["area_ha"]),
         "yield_growth": pct_change(latest["yield_kg_ha"], s[0]["yield_kg_ha"]),
     }
+
+
+# ---------------------------------------------------------------- exponential smoothing
+
+def _holt_fit(ys, alpha, beta, phi):
+    """Damped-trend Holt smoothing. Returns (level, trend, one-step-ahead residuals)."""
+    level, trend = ys[0], ys[1] - ys[0]
+    resid = []
+    for y in ys[1:]:
+        pred = level + phi * trend
+        resid.append(y - pred)
+        new_level = alpha * y + (1 - alpha) * pred
+        trend = beta * (new_level - level) + (1 - beta) * phi * trend
+        level = new_level
+    return level, trend, resid
+
+
+def holt_damped(ys, horizon=2):
+    """Grid-searched damped Holt model; small-sample friendly. Intervals are approximate."""
+    if len(ys) < 3:
+        raise ValueError("holt_damped needs at least 3 points")
+    grid = [i / 10 for i in range(1, 10)]
+    best = None
+    for alpha in grid:
+        for beta in grid:
+            for phi in (0.8, 0.9, 0.98):
+                level, trend, resid = _holt_fit(ys, alpha, beta, phi)
+                sse = sum(r * r for r in resid)
+                if best is None or sse < best[0]:
+                    best = (sse, alpha, beta, phi, level, trend, resid)
+    sse, alpha, beta, phi, level, trend, resid = best
+    sd = math.sqrt(sse / max(len(resid) - 1, 1))
+    out = []
+    damp = 0.0
+    for h in range(1, horizon + 1):
+        damp += phi ** h
+        value = level + damp * trend
+        # Approximate 95% band widening with horizon (standard ETS(A,Ad,N) form, simplified).
+        margin = 1.96 * sd * math.sqrt(1 + (h - 1) * alpha ** 2 * (1 + beta) ** 2)
+        out.append({"value": value, "lower": value - margin, "upper": value + margin})
+    return {"params": {"alpha": alpha, "beta": beta, "phi": phi}, "sd": sd, "rows": out}
+
+
+def forecast_smoothing(series: list[dict], horizon: int = 2) -> dict:
+    """Same row shape as forecast_series(), using damped exponential smoothing per metric."""
+    fits = {k: holt_damped([r[k] for r in series], horizon) for k in ("area_ha", "production_t", "yield_kg_ha")}
+    last = series[-1]
+    rows = []
+    for k in range(horizon):
+        a, p, y = fits["area_ha"]["rows"][k], fits["production_t"]["rows"][k], fits["yield_kg_ha"]["rows"][k]
+        rows.append({
+            "season": next_season(last["season"], k + 1), "forecast": True,
+            "area_ha": a["value"], "production_t": p["value"],
+            "production_lower": p["lower"], "production_upper": p["upper"],
+            "yield_kg_ha": y["value"], "yield_lower": y["lower"], "yield_upper": y["upper"],
+        })
+    return {"rows": rows, "params": {k: v["params"] for k, v in fits.items()}}
+
+
+def backtest(series: list[dict], key: str = "production_t", holdout: int = 2) -> dict:
+    """Fit on all but the last `holdout` seasons, forecast them, report mean absolute % error."""
+    if len(series) < holdout + 3:
+        return {"holdout": 0, "linear_mape": None, "smoothing_mape": None}
+    train, test = series[:-holdout], series[-holdout:]
+    lin = forecast_series(train, holdout)["rows"]
+    smo = forecast_smoothing(train, holdout)["rows"]
+
+    def mape(rows):
+        return sum(abs(r[key] - t[key]) / t[key] for r, t in zip(rows, test)) / holdout
+
+    return {
+        "holdout": holdout,
+        "seasons": [t["season"] for t in test],
+        "actual": [t[key] for t in test],
+        "linear": [r[key] for r in lin],
+        "smoothing": [r[key] for r in smo],
+        "linear_mape": mape(lin),
+        "smoothing_mape": mape(smo),
+    }
+
+
+def compare_models(series: list[dict], horizon: int = 2) -> dict:
+    """Both forecasts, a production backtest, and which model to prefer on that evidence."""
+    lin = forecast_series(series, horizon)
+    smo = forecast_smoothing(series, horizon)
+    bt = backtest(series)
+    recommended = "linear"
+    if bt["smoothing_mape"] is not None and bt["smoothing_mape"] < bt["linear_mape"]:
+        recommended = "smoothing"
+    return {"linear": lin, "smoothing": smo, "backtest": bt, "recommended": recommended}

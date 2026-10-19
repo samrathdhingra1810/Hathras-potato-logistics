@@ -28,16 +28,22 @@
   <div class="split split-3-2">
     <div class="card">
       <div class="card-head">
-        <div><h2>Actuals and trend projection</h2><p>OLS linear trend on season index</p></div>
+        <div><h2>Actuals and projection</h2><p data-bind="model-desc">OLS linear trend on season index</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="seg" role="radiogroup" aria-label="Forecast model" data-seg="model">
+          <button type="button" role="radio" aria-checked="true" data-value="linear">Linear trend</button>
+          <button type="button" role="radio" aria-checked="false" data-value="smoothing">Exp. smoothing</button>
+        </div>
         <div class="seg" role="radiogroup" aria-label="Forecast metric" data-seg="fc">
           <button type="button" role="radio" aria-checked="true" data-value="production">Production</button>
           <button type="button" role="radio" aria-checked="false" data-value="yield">Yield</button>
+        </div>
         </div>
       </div>
       <div class="card-body">
         <ul class="legend">
           <li><span class="sw" style="--c:var(--series-1)"></span>Actual</li>
-          <li><span class="sw dash" style="--c:var(--series-1)"></span>Linear-trend forecast</li>
+          <li><span class="sw dash" style="--c:var(--series-1)"></span><span data-bind="model-legend">Linear-trend forecast</span></li>
           <li><span class="sw band" style="--c:var(--band-1)"></span>95% prediction interval</li>
         </ul>
         <div class="chart-box tall"><canvas id="forecast-chart" aria-label="Actual and forecast values by season"></canvas></div>
@@ -45,6 +51,23 @@
     </div>
 
     <div class="stack">
+      {% set bt = compare.backtest %}
+      <div class="card">
+        <div class="card-head"><div><h3>Which model to trust?</h3><p>Backtest: fit on {{ series[0].season }}–{{ series[-(bt.holdout + 1)].season }}, predict {{ bt.seasons|join(' and ') }}</p></div>
+          <span class="pill">{{ 'Exp. smoothing' if compare.recommended == 'smoothing' else 'Linear trend' }} fits better</span></div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Season</th><th class="r">Actual</th><th class="r">Linear</th><th class="r">Smoothing</th></tr></thead>
+            <tbody>
+              {% for k in range(bt.holdout) %}
+              <tr><td><strong>{{ bt.seasons[k] }}</strong></td><td class="r">{{ bt.actual[k]|tonnes }}</td><td class="r">{{ bt.linear[k]|tonnes }}</td><td class="r">{{ bt.smoothing[k]|tonnes }}</td></tr>
+              {% endfor %}
+              <tr><td>Mean abs. error</td><td></td><td class="r"><strong>{{ bt.linear_mape|pct(2) }}</strong></td><td class="r"><strong>{{ bt.smoothing_mape|pct(2) }}</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="xs muted" style="padding:0 20px 14px;margin:0">With only six seasons, both errors are small and close; treat this as a sanity check, not proof. ARIMA-style models need far more history to be reliable.</p>
+      </div>
       <div class="card">
         <div class="card-head"><div><h3>Model statistics</h3><p>One straight-line fit per metric, n = {{ models.production_t.n }}</p></div></div>
         <div class="table-wrap">
@@ -79,7 +102,7 @@
     </div>
   </div>
 </div>
-{{ m.page_data({'series': series, 'forecast': forecast}) }}
+{{ m.page_data({'series': series, 'forecast': forecast, 'smoothing': compare.smoothing}) }}
 {% endblock %}
 
 {% block scripts %}
@@ -88,9 +111,18 @@
 <script>
   (function () {
     var d = HP.pageData();
-    var metric = 'production';
-    var c = HP.chart('forecast-chart', function () { return HP.forecastConfig(d.series, d.forecast.rows, metric); });
+    var metric = 'production', model = 'linear';
+    var desc = { linear: ['OLS linear trend on season index', 'Linear-trend forecast'],
+                 smoothing: ['Damped exponential smoothing (Holt), approximate interval', 'Smoothing forecast'] };
+    var rows = function () { return model === 'linear' ? d.forecast.rows : d.smoothing.rows; };
+    var c = HP.chart('forecast-chart', function () { return HP.forecastConfig(d.series, rows(), metric); });
     HP.segmented('fc', function (v) { metric = v; c.rebuild(); });
+    HP.segmented('model', function (v) {
+      model = v;
+      document.querySelector('[data-bind="model-desc"]').textContent = desc[v][0];
+      document.querySelector('[data-bind="model-legend"]').textContent = desc[v][1];
+      c.rebuild();
+    });
   })();
 </script>
 {% endblock %}

@@ -95,3 +95,36 @@ def block_strain(blocks, *, demand_t, capacity_t, alert_threshold=0.9) -> list[d
         out.append({**b, "demand_t": d, "capacity_t": c, "gap_t": c - d, "utilisation": u,
                     "level": strain_level(u, alert_threshold)})
     return out
+
+
+def holding_economics(sim: dict, *, kwh_per_t_month: float, tariff_rs_kwh: float, tariff_change: float = 0.0) -> dict:
+    """Electricity cost of holding the season's stock (uses each month's average stock)."""
+    rate = tariff_rs_kwh * (1 + tariff_change)
+    monthly = []
+    total_t_months = 0.0
+    for m in sim["months"]:
+        avg = max(m["stock"] - m["release"] / 2, 0.0)
+        total_t_months += avg
+        monthly.append({"month": m["month"], "avg_stock_t": avg, "cost_rs": avg * kwh_per_t_month * rate})
+    total = total_t_months * kwh_per_t_month * rate
+    stored = sum(m["accepted"] for m in sim["months"])
+    return {
+        "rate_rs_kwh": rate,
+        "kwh_per_t_month": kwh_per_t_month,
+        "tonne_months": total_t_months,
+        "energy_kwh": total_t_months * kwh_per_t_month,
+        "season_cost_rs": total,
+        "cost_per_t_stored_rs": total / stored if stored else 0.0,
+        "monthly": monthly,
+    }
+
+
+def block_monthly(blocks_strain: list[dict], sim: dict) -> list[dict]:
+    """Adds each block's utilisation per month (district stock shape scaled by the block's shares)."""
+    district_peak = max(m["demanded_stock"] for m in sim["months"]) or 1.0
+    out = []
+    for b in blocks_strain:
+        months = [{"month": m["month"], "utilisation": b["utilisation"] * m["demanded_stock"] / district_peak}
+                  for m in sim["months"]]
+        out.append({**b, "monthly": months})
+    return out
