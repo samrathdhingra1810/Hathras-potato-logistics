@@ -1,5 +1,16 @@
-<section class="w-full bg-slate-950/80 border-y border-slate-800/80 py-16 px-4 my-12" aria-labelledby="cf-scale">
+<section class="w-full my-12" aria-labelledby="cf-scale">
+  <div class="w-full h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" aria-hidden="true"></div>
+  <div class="bg-slate-950/80 py-16 px-4">
   <div class="max-w-6xl mx-auto">
+    <div class="mb-6">
+      <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-950/40 border border-blue-800/50 text-xs text-blue-300">
+        <span class="relative flex w-2 h-2" aria-hidden="true">
+          <span class="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+          <span class="relative inline-flex w-2 h-2 rounded-full bg-emerald-500"></span>
+        </span>
+        Model current • {{ scenario.blocks|length }}/{{ scenario.blocks|length }} Hathras blocks mapped<span class="hidden sm:inline"> • {{ latest.season }} data</span>
+      </span>
+    </div>
     <h2 id="cf-scale" class="text-2xl font-bold text-white mb-8 tracking-tight">The scale of the problem</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {% for num, label in [
@@ -8,11 +19,13 @@
         ('%.1fk'|format(sim.total_overflow_t / 1000), 'Tonne storage deficit causing localized bottlenecks, at the 950k t placeholder capacity.'),
         (scenario.blocks|length|string, 'Development blocks mapped down to local cold storage capacity.'),
       ] %}
-      <div class="group bg-slate-900/60 p-6 rounded-2xl border border-slate-800 backdrop-blur-md hover:border-slate-700 transition-all">
+      <div class="group bg-slate-900/60 p-6 rounded-2xl border border-slate-800 backdrop-blur-md hover:border-slate-700 hover:shadow-[0_0_30px_rgba(59,130,246,0.12)] transition-all duration-300">
         <div class="text-4xl font-extrabold text-blue-400 mb-2 font-mono group-hover:scale-[1.02] transition-transform origin-left">{{ num }}</div>
         <p class="text-sm text-slate-400 leading-relaxed m-0">{{ label }}</p>
       </div>
       {% endfor %}
     </div>
   </div>
+  </div>
+  <div class="w-full h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" aria-hidden="true"></div>
 </section>
