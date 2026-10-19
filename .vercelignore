@@ -1,0 +1,5 @@
+react-version
+.venv
+tests
+**/__pycache__
+.env.local

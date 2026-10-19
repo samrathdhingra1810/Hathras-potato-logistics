@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block title %}Production analytics · {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / <a href="{{ url_for('tools') }}">Tools</a> / Production</div>
+    <h1>Production &amp; yield analytics</h1>
+    <p class="lead" style="max-width:720px">How much land went under potato, how much it produced, and how productive it was, season by season.</p>
+  </div>
+</section>
+<div class="container stack">
+  {{ m.tool_tabs('tool_production') }}
+  {{ m.headline_kpis(headline) }}
+
+  <div class="card">
+    <div class="card-head">
+      <div><h2>Area vs harvest output</h2><p>{{ series[0].season }} – {{ series[-1].season }}</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="seg" role="radiogroup" aria-label="Metric" data-seg="metric">
+          <button type="button" role="radio" aria-checked="true" data-value="areaProd">Area vs output</button>
+          <button type="button" role="radio" aria-checked="false" data-value="yield">Yield</button>
+        </div>
+        <div class="seg" role="radiogroup" aria-label="Scale" data-seg="scale">
+          <button type="button" role="radio" aria-checked="true" data-value="indexed">Indexed</button>
+          <button type="button" role="radio" aria-checked="false" data-value="absolute">Absolute</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div data-view="indexed">
+        <ul class="legend">
+          <li><span class="sw" style="--c:var(--series-1)"></span>Area cultivated (index)</li>
+          <li><span class="sw" style="--c:var(--series-2)"></span>Harvest output (index)</li>
+        </ul>
+        <div class="chart-box tall"><canvas id="indexed-chart" aria-label="Area and output indexed to the first season"></canvas></div>
+        <p class="chart-note">{{ series[0].season }} = 100. Output rising faster than area means yield gains.</p>
+      </div>
+      <div data-view="absolute" hidden>
+        <div class="grid grid-2">
+          <div><p class="small" style="margin:0 0 6px"><strong>Area cultivated (ha)</strong></p><div class="chart-box"><canvas id="area-chart" aria-label="Area cultivated by season"></canvas></div></div>
+          <div><p class="small" style="margin:0 0 6px"><strong>Harvest output (t)</strong></p><div class="chart-box"><canvas id="prod-chart" aria-label="Harvest output by season"></canvas></div></div>
+        </div>
+      </div>
+      <div data-view="yield" hidden>
+        <ul class="legend">
+          <li><span class="sw" style="--c:var(--series-1)"></span>Yield (kg/ha)</li>
+          <li><span class="sw dash" style="--c:var(--ink-muted)"></span>Six-season average ({{ headline.avg_yield_kg_ha|num }})</li>
+        </ul>
+        <div class="chart-box tall"><canvas id="yield-chart" aria-label="Yield by season"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><h2>Season table</h2><p>Supplied district figures with year-on-year change</p></div>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('production_csv') }}">Download CSV</a>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Season</th><th class="r">Area (ha)</th><th class="r">Area YoY</th><th class="r">Production (t)</th><th class="r">Output YoY</th><th class="r">Yield (kg/ha)</th><th class="r">Yield YoY</th></tr></thead>
+        <tbody>
+          {% for r in series %}
+          <tr>
+            <td><strong>{{ r.season }}</strong></td>
+            <td class="r">{{ r.area_ha|num }}</td><td class="r muted">{{ r.area_yoy|pct(2, True) }}</td>
+            <td class="r">{{ r.production_t|num }}</td><td class="r muted">{{ r.production_yoy|pct(2, True) }}</td>
+            <td class="r">{{ r.yield_kg_ha|num }}</td><td class="r muted">{{ r.yield_yoy|pct(2, True) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid grid-3">
+    <div class="card card-body"><div class="small muted">Area growth since {{ headline.first.season }}</div><div style="font-size:1.4rem;font-weight:700" class="tabular">{{ headline.area_growth|pct(1, True) }}</div></div>
+    <div class="card card-body"><div class="small muted">Yield growth since {{ headline.first.season }}</div><div style="font-size:1.4rem;font-weight:700" class="tabular">{{ headline.yield_growth|pct(1, True) }}</div></div>
+    <div class="card card-body"><div class="small muted">Output CAGR</div><div style="font-size:1.4rem;font-weight:700" class="tabular">{{ headline.cagr|pct(2) }}</div></div>
+  </div>
+</div>
+{{ m.page_data({'series': series, 'avgYield': headline.avg_yield_kg_ha}) }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+  (function () {
+    var d = HP.pageData();
+    var state = { metric: 'areaProd', scale: 'indexed' };
+    HP.chart('indexed-chart', function () { return HP.indexedConfig(d.series); });
+    HP.chart('area-chart', function () { return HP.singleConfig(d.series, 'area_ha', 'var(--series-1)', 'Area', HP.fmt.ha); });
+    HP.chart('prod-chart', function () { return HP.singleConfig(d.series, 'production_t', 'var(--series-2)', 'Output', HP.fmt.tFull); });
+    HP.chart('yield-chart', function () { return HP.singleConfig(d.series, 'yield_kg_ha', 'var(--series-1)', 'Yield', HP.fmt.kgha, d.avgYield); });
+
+    function show() {
+      var view = state.metric === 'yield' ? 'yield' : state.scale;
+      document.querySelectorAll('[data-view]').forEach(function (el) { el.hidden = el.dataset.view !== view; });
+      document.querySelector('[data-seg="scale"]').style.display = state.metric === 'yield' ? 'none' : '';
+      HP.resizeAll();
+    }
+    HP.segmented('metric', function (v) { state.metric = v; show(); });
+    HP.segmented('scale', function (v) { state.scale = v; show(); });
+  })();
+</script>
+{% endblock %}

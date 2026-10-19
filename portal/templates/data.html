@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block title %}Data & downloads · {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / Data</div>
+    <h1>Data &amp; downloads</h1>
+    <p class="lead" style="max-width:720px">The district series behind every tool on this site, the planning assumptions, and machine-readable endpoints.</p>
+  </div>
+</section>
+<div class="container stack">
+  <div class="card">
+    <div class="card-head">
+      <div><h2>{{ source.label }}</h2><p>{{ source.note }}</p></div>
+      <a class="btn btn-primary btn-sm" href="{{ url_for('production_csv') }}">Download CSV</a>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Season</th><th class="r">Area (ha)</th><th class="r">Production (t)</th><th class="r">Yield (kg/ha)</th><th class="r">Output YoY</th></tr></thead>
+        <tbody>
+          {% for r in series %}
+          <tr><td><strong>{{ r.season }}</strong></td><td class="r">{{ r.area_ha|num }}</td><td class="r">{{ r.production_t|num }}</td><td class="r">{{ r.yield_kg_ha|num }}</td><td class="r muted">{{ r.production_yoy|pct(2, True) }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div><h2>Planning assumptions</h2><p>Used by the capacity planner and block map. Edit them in <code>portal/core/dataset.py</code>.</p></div></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Item</th><th>Value</th><th>Status</th><th>Note</th></tr></thead>
+        <tbody>
+          {% for a in assumptions %}
+          <tr><td><strong>{{ a.item }}</strong></td><td>{{ a.value }}</td><td><span class="tag">{{ a.status }}</span></td><td class="muted" style="white-space:normal;min-width:260px">{{ a.note }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="split split-3-2">
+    <div class="card">
+      <div class="card-head"><div><h2>Development blocks</h2><p>Modelled shares of district production and storage capacity</p></div></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Block</th><th class="r">Production share</th><th class="r">Capacity share</th><th class="r">Lat, Lng</th></tr></thead>
+          <tbody>
+            {% for b in blocks %}
+            <tr><td><strong>{{ b.name }}</strong></td><td class="r">{{ b.production_share|pct(0) }}</td><td class="r">{{ b.capacity_share|pct(0) }}</td><td class="r muted">{{ '%.3f'|format(b.lat) }}, {{ '%.3f'|format(b.lng) }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><h2>JSON API</h2><p>Free to use; no key required</p></div></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Endpoint</th><th>Returns</th></tr></thead>
+          <tbody>
+            <tr><td><a href="{{ url_for('api_baseline') }}"><code>GET /api/baseline</code></a></td><td>Series, blocks, assumptions</td></tr>
+            <tr><td><a href="{{ url_for('api_forecast') }}"><code>GET /api/forecast</code></a></td><td>Forecast rows &amp; model stats (<code>?horizon=1–5</code>)</td></tr>
+            <tr><td><a href="{{ url_for('api_scenario') }}"><code>GET /api/scenario</code></a></td><td>Storage simulation (<code>season, capacity, ratio, threshold, facility</code>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

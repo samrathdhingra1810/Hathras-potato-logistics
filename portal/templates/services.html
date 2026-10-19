@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block title %}Services · {{ site_name }}{% endblock %}
+{% block description %}What the portal offers farmers, cold storage operators, traders and planners in Hathras district.{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / Services</div>
+    <h1>Services</h1>
+    <p class="lead" style="max-width:720px">Free, open tools and data for planning {{ district.name }}'s potato season. Pick what you need below, or start with the capacity planner.</p>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container grid grid-3">
+    <a class="card card-link feature" href="{{ url_for('tool_production') }}">
+      <div class="icon" aria-hidden="true">▤</div>
+      <h3>Production analytics</h3>
+      <p>Interactive charts of area cultivated, harvest output and yield for every season since 2018-19, with YoY change and a data table.</p>
+      <span class="go">Open →</span>
+    </a>
+    <a class="card card-link feature" href="{{ url_for('tool_forecast') }}">
+      <div class="icon" aria-hidden="true">↗</div>
+      <h3>Harvest forecasting</h3>
+      <p>Two-season projections of production and yield with a 95% prediction interval, trend rate and goodness of fit.</p>
+      <span class="go">Open →</span>
+    </a>
+    <a class="card card-link feature" href="{{ url_for('tool_planner') }}">
+      <div class="icon" aria-hidden="true">▦</div>
+      <h3>Cold storage capacity planning</h3>
+      <p>Month-by-month stock against capacity, peak-harvest deficit alerts, and your facility's share of regional demand.</p>
+      <span class="go">Open →</span>
+    </a>
+    <a class="card card-link feature" href="{{ url_for('tool_map') }}">
+      <div class="icon" aria-hidden="true">◎</div>
+      <h3>Block-level strain mapping</h3>
+      <p>A map of the seven development blocks coloured by projected storage strain, with demand, capacity and gap per block.</p>
+      <span class="go">Open →</span>
+    </a>
+    <a class="card card-link feature" href="{{ url_for('data') }}">
+      <div class="icon" aria-hidden="true">⇩</div>
+      <h3>Open data &amp; downloads</h3>
+      <p>The district series as CSV, plus every planning assumption in one table, so you can rerun the numbers yourself.</p>
+      <span class="go">Open →</span>
+    </a>
+    <a class="card card-link feature" href="{{ url_for('api_baseline') }}">
+      <div class="icon" aria-hidden="true">{ }</div>
+      <h3>JSON API</h3>
+      <p>Machine-readable endpoints for the baseline data, forecasts and full storage scenarios, for use in your own apps.</p>
+      <span class="go">View endpoint →</span>
+    </a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">By audience</span><h2>How each group uses the portal</h2></div>
+    <div class="grid grid-2">
+      <div class="card card-body">
+        <h3>Farmers &amp; farmer producer organisations</h3>
+        <ul class="check-list">
+          <li>Check whether storage is likely to be tight before digging starts</li>
+          <li>Time bookings ahead of the March loading peak</li>
+          <li>Use block strain to find stores with spare capacity nearby</li>
+        </ul>
+      </div>
+      <div class="card card-body">
+        <h3>Cold storage operators</h3>
+        <ul class="check-list">
+          <li>Enter your capacity to see your share of district demand</li>
+          <li>Test expansion sizes against the 2024-25 and 2025-26 forecasts</li>
+          <li>Plan release schedules against the May–November outflow</li>
+        </ul>
+      </div>
+      <div class="card card-body">
+        <h3>Traders &amp; logistics providers</h3>
+        <ul class="check-list">
+          <li>Anticipate months when unstored surplus floods the market</li>
+          <li>Plan trucks and out-of-district movement for deficit blocks</li>
+          <li>Follow production trends across seasons</li>
+        </ul>
+      </div>
+      <div class="card card-body">
+        <h3>Planners &amp; officials</h3>
+        <ul class="check-list">
+          <li>Quantify the district capacity gap at harvest peak</li>
+          <li>Prioritise blocks for new cold storage investment</li>
+          <li>Share one consistent, documented set of numbers</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="cta">
+      <h2>Start with the capacity planner</h2>
+      <p>It takes under a minute: set the district's capacity and see the peak-harvest outlook.</p>
+      <a class="btn btn-primary" href="{{ url_for('tool_planner') }}">Open planner</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

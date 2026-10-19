@@ -1,0 +1,56 @@
+{% set LEVELS = {
+  'good': {'label': 'Adequate', 'icon': '●'},
+  'warning': {'label': 'Watch', 'icon': '▲'},
+  'serious': {'label': 'Strained', 'icon': '◆'},
+  'critical': {'label': 'Deficit', 'icon': '■'},
+} %}
+
+{% macro badge(level, label=None) -%}
+<span class="badge lvl-{{ level }}"><i aria-hidden="true">{{ LEVELS[level].icon }}</i>{{ label or LEVELS[level].label }}</span>
+{%- endmacro %}
+
+{% macro delta(v, text) -%}
+{% if v is none %}<div class="delta muted">{{ text }}</div>
+{% elif v > 0 %}<div class="delta up"><span aria-hidden="true">▲</span> {{ text }}</div>
+{% elif v < 0 %}<div class="delta down"><span aria-hidden="true">▼</span> {{ text }}</div>
+{% else %}<div class="delta muted">{{ text }}</div>{% endif %}
+{%- endmacro %}
+
+{% macro kpi(label, value, unit=None, d=None, dtext=None, foot=None) -%}
+<div class="card kpi">
+  <div class="label">{{ label }}</div>
+  <div class="value tabular">{{ value }}{% if unit %}<small>{{ unit }}</small>{% endif %}</div>
+  {% if dtext %}{{ delta(d, dtext) }}{% endif %}
+  {% if foot %}<div class="foot">{{ foot }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro headline_kpis(h, ratio=0.75) -%}
+{% set latest = h.latest %}{% set prev = h.previous %}
+{% set demand = latest.production_t * ratio %}
+<div class="grid grid-4">
+  {{ kpi('Total regional production · ' ~ latest.season, '%.3f'|format(latest.production_t / 1e6), 'M t',
+         latest.production_yoy, (latest.production_yoy|pct(2, True)) ~ ' vs ' ~ prev.season, latest.production_t|num ~ ' tonnes harvested') }}
+  {{ kpi('Estimated cold storage demand', '%.4f'|format(demand / 1e6), 'M t',
+         demand - prev.production_t * ratio, '+' ~ ((demand - prev.production_t * ratio)|num) ~ ' t vs ' ~ prev.season,
+         (ratio|pct(0)) ~ ' of harvest stored') }}
+  {{ kpi('Harvest growth rate (YoY)', latest.production_yoy|pct(2, True), None,
+         latest.production_yoy - prev.production_yoy, 'from ' ~ (prev.production_yoy|pct(2, True)) ~ ' in ' ~ prev.season,
+         (h.cagr|pct(2)) ~ ' a year since ' ~ h.first.season) }}
+  {{ kpi('Yield efficiency · ' ~ latest.season, '%.2f'|format(latest.yield_kg_ha / 1000), 't/ha',
+         latest.yield_yoy, (latest.yield_yoy|pct(2, True)) ~ ' YoY', '%.2f'|format(h.avg_yield_kg_ha / 1000) ~ ' t/ha six-season average') }}
+</div>
+{%- endmacro %}
+
+{% macro tool_tabs(current) -%}
+<nav class="tool-tabs" aria-label="Tools">
+  <a href="{{ url_for('tools') }}" {% if current == 'tools' %}aria-current="page"{% endif %}>Overview</a>
+  {% for t in tools %}
+  <a href="{{ url_for(t.endpoint) }}" {% if current == t.endpoint %}aria-current="page"{% endif %}>{{ t.name }}</a>
+  {% endfor %}
+</nav>
+{%- endmacro %}
+
+{% macro page_data(payload) -%}
+<script type="application/json" id="page-data">{{ payload|tojson }}</script>
+{%- endmacro %}

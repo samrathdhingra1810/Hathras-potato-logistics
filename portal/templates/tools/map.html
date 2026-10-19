@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block title %}Block strain map · {{ site_name }}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+{% endblock %}
+
+{% block content %}
+{% set s = scenario %}{% set i = s.inputs %}
+<section class="page-head">
+  <div class="container">
+    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / <a href="{{ url_for('tools') }}">Tools</a> / Block map</div>
+    <h1>Block-level storage strain</h1>
+    <p class="lead" style="max-width:760px">Projected cold storage demand ÷ local capacity for each development block of {{ district.name }} district.</p>
+  </div>
+</section>
+<div class="container stack">
+  {{ m.tool_tabs('tool_map') }}
+
+  <div class="card card-body" style="display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:end">
+    <div class="field" style="margin:0">
+      <label for="season">Season</label>
+      <select class="input" id="season" style="margin-top:8px">
+        {% for o in s.seasons %}<option value="{{ o.value }}" {% if o.value == i.season %}selected{% endif %}>{{ o.label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field" style="margin:0">
+      <div class="field-top"><label for="capacity">District capacity</label><output for="capacity" data-out="capacity"></output></div>
+      <input type="range" id="capacity" min="400000" max="1600000" step="10000" value="{{ i.capacity|int }}">
+    </div>
+    <div class="field" style="margin:0">
+      <div class="field-top"><label for="ratio">Share stored</label><output for="ratio" data-out="ratio"></output></div>
+      <input type="range" id="ratio" min="0.4" max="0.95" step="0.01" value="{{ i.ratio }}">
+    </div>
+    <div><span class="tag">Block split is modelled</span></div>
+  </div>
+
+  <div class="split split-3-2-map">
+    <div class="card card-body">
+      <div class="map" id="map" role="region" aria-label="Map of Hathras development blocks"></div>
+      <p class="chart-note">Circle size ∝ storage demand; colour = strain level. Markers sit at approximate block HQ locations.</p>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><h3>Blocks ranked by strain</h3><p data-bind="caption">{{ i.season }} · capacity {{ i.capacity|tonnes }}</p></div></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Block</th><th class="r">Demand</th><th class="r">Capacity</th><th class="r">Util.</th><th class="r">Status</th></tr></thead>
+          <tbody id="block-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="notice">District demand and capacity are split across blocks with modelled shares. Replace them with block-level production and the cold storage registry to make this layer authoritative.</div>
+</div>
+{{ m.page_data({'scenario': s, 'center': district.center}) }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}

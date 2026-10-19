@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block title %}Cold storage capacity planner · {{ site_name }}{% endblock %}
+
+{% block content %}
+{% set s = scenario %}{% set sim = s.simulation %}{% set i = s.inputs %}
+<section class="page-head">
+  <div class="container">
+    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / <a href="{{ url_for('tools') }}">Tools</a> / Capacity planner</div>
+    <h1>Cold storage capacity planner</h1>
+    <p class="lead" style="max-width:760px">Load the season's harvest into the district's cold stores month by month and see where capacity runs out. Change the inputs; the link updates so you can share your scenario.</p>
+  </div>
+</section>
+<div class="container stack">
+  {{ m.tool_tabs('tool_planner') }}
+
+  <div class="split split-1-2">
+    <form class="card card-body" id="planner-form" onsubmit="return false" aria-label="Planner inputs">
+      <div class="field">
+        <label for="season">Season</label>
+        <select class="input" id="season" name="season" style="margin-top:8px">
+          {% for o in s.seasons %}<option value="{{ o.value }}" {% if o.value == i.season %}selected{% endif %}>{{ o.label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-top"><label for="capacity">District cold storage capacity</label><output for="capacity" data-out="capacity"></output></div>
+        <input type="range" id="capacity" name="capacity" min="400000" max="1600000" step="10000" value="{{ i.capacity|int }}">
+        <div class="hint">Default is a placeholder. Use the registered capacity from the UP Horticulture cold storage list.</div>
+      </div>
+      <div class="field">
+        <div class="field-top"><label for="ratio">Share of harvest stored</label><output for="ratio" data-out="ratio"></output></div>
+        <input type="range" id="ratio" name="ratio" min="0.4" max="0.95" step="0.01" value="{{ i.ratio }}">
+      </div>
+      <div class="field">
+        <div class="field-top"><label for="threshold">Alert threshold</label><output for="threshold" data-out="threshold"></output></div>
+        <input type="range" id="threshold" name="threshold" min="0.7" max="1" step="0.01" value="{{ i.threshold }}">
+      </div>
+      <div class="field">
+        <div class="field-top"><label for="facility">Your facility's capacity</label><output for="facility" data-out="facility"></output></div>
+        <input type="range" id="facility" name="facility" min="1000" max="60000" step="500" value="{{ i.facility|int }}">
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="tag">Capacity default is an assumption</span>
+        <span class="tag">Intake profile is an assumption</span>
+      </div>
+      <p style="margin:16px 0 0"><button type="button" class="btn btn-ghost btn-sm" id="reset">Reset to defaults</button></p>
+    </form>
+
+    <div class="stack" aria-live="polite">
+      <div class="alert lvl-{{ sim.status }}" id="alert">
+        <i aria-hidden="true" data-bind="alert-icon">■</i>
+        <div><strong data-bind="alert-title"></strong><p data-bind="alert-body"></p></div>
+      </div>
+
+      <dl class="mini-stats" style="margin:0">
+        <div><dt>Harvest</dt><dd data-bind="production">{{ s.production_t|tonnes }}</dd><dd data-bind="season-label">{{ i.season }}</dd></div>
+        <div><dt>Storage demand</dt><dd data-bind="demand">{{ s.demand_t|tonnes }}</dd><dd data-bind="ratio-label">{{ i.ratio|pct(0) }} of harvest</dd></div>
+        <div><dt>District coverage</dt><dd data-bind="coverage">{{ s.district_coverage|pct(1) }}</dd><dd data-bind="gap"></dd></div>
+        <div><dt>Your facility covers</dt><dd data-bind="facility-cov">{{ s.facility_coverage|pct(2) }}</dd><dd>of regional demand</dd></div>
+      </dl>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Stock vs capacity by month</h2><p>Peak harvest shaded February–April</p></div></div>
+        <div class="card-body">
+          <ul class="legend">
+            <li><span class="sw box" style="--c:var(--series-1)"></span>Stock in cold storage</li>
+            <li><span class="sw box" style="--c:var(--status-critical)"></span>Unmet storage demand</li>
+            <li><span class="sw" style="--c:var(--ink)"></span>Capacity</li>
+            <li><span class="sw dash" style="--c:var(--status-serious)"></span>Alert threshold</li>
+          </ul>
+          <div class="chart-box tall"><canvas id="storage-chart" aria-label="Monthly cold storage stock against capacity"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h3>Peak-harvest months</h3><p>Where the alert comes from</p></div></div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Month</th><th class="r">Intake</th><th class="r">Stock demanded</th><th class="r">Utilisation</th><th class="r">Status</th></tr></thead>
+            <tbody id="peak-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{ m.page_data({'scenario': s, 'defaults': {'capacity': 950000, 'ratio': 0.75, 'threshold': 0.9, 'facility': 10000}}) }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/planner.js') }}"></script>
+{% endblock %}

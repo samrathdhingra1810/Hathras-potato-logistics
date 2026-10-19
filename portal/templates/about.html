@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block title %}About & methodology · {{ site_name }}{% endblock %}
+{% block description %}Why this portal exists, where the data comes from, and how the forecasts and storage model work.{% endblock %}
+
+{% block content %}
+{% set h = headline %}
+<section class="page-head">
+  <div class="container">
+    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / About</div>
+    <h1>About this portal</h1>
+    <p class="lead" style="max-width:720px">{{ site_name }} is an open information portal that brings together potato production data and cold storage planning for {{ district.name }} district, so that everyone in the supply chain works from the same numbers.</p>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container split split-3-2">
+    <div class="prose">
+      <h2 style="margin-top:0">Why Hathras</h2>
+      <p>{{ district.name }} sits in western Uttar Pradesh's potato belt. In {{ h.latest.season }} the district harvested about {{ h.latest.production_t|tonnes(compact=False) }} from {{ h.latest.area_ha|num }} ha, and output has grown {{ h.cagr|pct(2) }} a year since {{ h.first.season }}.</p>
+      <p>Almost the whole crop is dug in a few weeks from late February. Most of it has to go into cold storage within about two months, so storage capacity, not just production, decides what farmers earn. When stores fill up, the surplus is sold at harvest-glut prices or trucked out of the district.</p>
+
+      <h2>What we do</h2>
+      <ul class="check-list">
+        <li>Publish the district's area, production and yield series in one place, with downloads.</li>
+        <li>Project the next two harvests with a transparent statistical method.</li>
+        <li>Model month-by-month cold storage stock against capacity and flag shortfalls.</li>
+        <li>Show which development blocks are likely to be under the most strain.</li>
+      </ul>
+
+      <h2 id="methodology">Methodology</h2>
+      <h3>Growth and yield</h3>
+      <p>Year-on-year change is the percentage change from the previous season. Annual growth (CAGR) is computed between {{ h.first.season }} and {{ h.latest.season }}. Yield is production ÷ area.</p>
+      <h3>Forecast</h3>
+      <p>Area, production and yield are each fitted with an ordinary least-squares straight line against the season index (0 = {{ h.first.season }}). The 95% prediction interval uses the Student-t distribution with n − 2 degrees of freedom. With only six seasons, the interval is wide, and treating the range as the planning figure is safer than the point estimate. Weather, prices and seed availability are not modelled.</p>
+      <h3>Cold storage model</h3>
+      <p>Storage demand is the harvest × the share stored (75% by default). That volume enters storage following a monthly intake profile (February–April) and leaves following a release profile (May–November). Each month, intake beyond free capacity is counted as unmet demand. Utilisation is the stock the season would hold with unlimited space ÷ capacity. Status levels are: <em>Adequate</em> below the alert threshold − 15 points, <em>Watch</em> up to the threshold, <em>Strained</em> from the threshold to 100%, and <em>Deficit</em> above 100%.</p>
+      <h3>Block map</h3>
+      <p>District demand and capacity are split across the seven development blocks with modelled shares. Treat the block layer as illustrative until block-level production and the cold storage registry are added.</p>
+    </div>
+
+    <aside class="stack">
+      <div class="card">
+        <div class="card-head"><div><h3>Data provenance</h3><p>What is measured and what is assumed</p></div></div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Item</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Area, production, yield 2018-19 → 2023-24</td><td><span class="pill">Supplied data</span></td></tr>
+              {% for a in assumptions %}
+              <tr><td>{{ a.item }}</td><td><span class="tag">{{ a.status }}</span></td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="notice"><strong>Disclaimer.</strong> {{ source.note }} Planning outputs are estimates for guidance and are not official statistics or financial advice.</div>
+      <a class="btn btn-ghost" href="{{ url_for('data') }}">See the full dataset →</a>
+    </aside>
+  </div>
+</section>
+{% endblock %}

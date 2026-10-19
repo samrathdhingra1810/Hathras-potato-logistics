@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block title %}Harvest forecast · {{ site_name }}{% endblock %}
+
+{% block content %}
+{% set rows = forecast.rows %}{% set models = forecast.models %}
+<section class="page-head">
+  <div class="container">
+    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / <a href="{{ url_for('tools') }}">Tools</a> / Forecast</div>
+    <h1>Harvest forecast</h1>
+    <p class="lead" style="max-width:720px">Where the trend puts {{ district.name }}'s potato crop in {{ rows[0].season }} and {{ rows[1].season }}, and how sure we can be.</p>
+  </div>
+</section>
+<div class="container stack">
+  {{ m.tool_tabs('tool_forecast') }}
+
+  <div class="grid grid-4">
+    {% for r in rows %}
+    {{ m.kpi('Projected production · ' ~ r.season, '%.3f'|format(r.production_t / 1e6), 'M t', None, None,
+             '95% range ' ~ (r.production_lower|tonnes) ~ ' – ' ~ (r.production_upper|tonnes)) }}
+    {% endfor %}
+    {% for r in rows %}
+    {{ m.kpi('Projected yield · ' ~ r.season, '%.2f'|format(r.yield_kg_ha / 1000), 't/ha', None, None,
+             'Area ~' ~ (r.area_ha|num) ~ ' ha') }}
+    {% endfor %}
+  </div>
+
+  <div class="split split-3-2">
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Actuals and trend projection</h2><p>OLS linear trend on season index</p></div>
+        <div class="seg" role="radiogroup" aria-label="Forecast metric" data-seg="fc">
+          <button type="button" role="radio" aria-checked="true" data-value="production">Production</button>
+          <button type="button" role="radio" aria-checked="false" data-value="yield">Yield</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <ul class="legend">
+          <li><span class="sw" style="--c:var(--series-1)"></span>Actual</li>
+          <li><span class="sw dash" style="--c:var(--series-1)"></span>Linear-trend forecast</li>
+          <li><span class="sw band" style="--c:var(--band-1)"></span>95% prediction interval</li>
+        </ul>
+        <div class="chart-box tall"><canvas id="forecast-chart" aria-label="Actual and forecast values by season"></canvas></div>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="card">
+        <div class="card-head"><div><h3>Model statistics</h3><p>One straight-line fit per metric, n = {{ models.production_t.n }}</p></div></div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Metric</th><th class="r">Trend / season</th><th class="r">R²</th></tr></thead>
+            <tbody>
+              <tr><td>Production</td><td class="r">+{{ models.production_t.slope|num }} t</td><td class="r">{{ '%.3f'|format(models.production_t.r2) }}</td></tr>
+              <tr><td>Yield</td><td class="r">+{{ models.yield_kg_ha.slope|num }} kg/ha</td><td class="r">{{ '%.3f'|format(models.yield_kg_ha.r2) }}</td></tr>
+              <tr><td>Area</td><td class="r">+{{ models.area_ha.slope|num }} ha</td><td class="r">{{ '%.3f'|format(models.area_ha.r2) }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h3>Forecast table</h3><p>Point estimate and 95% interval</p></div></div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Season</th><th class="r">Production</th><th class="r">Yield</th></tr></thead>
+            <tbody>
+              {% for r in rows %}
+              <tr>
+                <td><strong>{{ r.season }}</strong></td>
+                <td class="r">{{ r.production_t|num }} t<br><span class="xs muted">{{ r.production_lower|tonnes }} – {{ r.production_upper|tonnes }}</span></td>
+                <td class="r">{{ r.yield_kg_ha|num }} kg/ha<br><span class="xs muted">{{ r.yield_lower|num }} – {{ r.yield_upper|num }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="notice">Six data points give a wide interval. Plan to the range, not the point. Weather, prices and seed supply are not modelled. <a href="{{ url_for('about') }}#methodology">Methodology →</a></div>
+    </div>
+  </div>
+</div>
+{{ m.page_data({'series': series, 'forecast': forecast}) }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+  (function () {
+    var d = HP.pageData();
+    var metric = 'production';
+    var c = HP.chart('forecast-chart', function () { return HP.forecastConfig(d.series, d.forecast.rows, metric); });
+    HP.segmented('fc', function (v) { metric = v; c.rebuild(); });
+  })();
+</script>
+{% endblock %}

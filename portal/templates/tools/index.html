@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block title %}Tools · {{ site_name }}{% endblock %}
+
+{% block content %}
+{% set sim = scenario.simulation %}
+<section class="page-head">
+  <div class="container">
+    <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / Tools</div>
+    <h1>Data &amp; planning tools</h1>
+    <p class="lead" style="max-width:720px">Headline numbers for {{ district.name }}, then pick a tool to dig in.</p>
+  </div>
+</section>
+<div class="container">
+  {{ m.tool_tabs('tools') }}
+  {{ m.headline_kpis(headline) }}
+
+  <div class="grid grid-2" style="margin-top:20px">
+    {% for t in tools %}
+    <a class="card card-link feature" href="{{ url_for(t.endpoint) }}">
+      <h3>{{ t.name }}</h3>
+      <p>{{ t.blurb }}</p>
+      {% if t.slug == 'forecast' %}
+      <p class="small" style="margin-top:12px"><strong class="tabular">{{ forecast.rows[0].season }}: {{ forecast.rows[0].production_t|tonnes }}</strong> · {{ forecast.rows[1].season }}: {{ forecast.rows[1].production_t|tonnes }}</p>
+      {% elif t.slug == 'planner' %}
+      <p style="margin-top:12px">{{ m.badge(sim.status, 'Peak ' ~ (sim.peak_utilisation|pct(0)) ~ ' in ' ~ sim.peak_month) }}</p>
+      {% elif t.slug == 'map' %}
+      {% set strained = scenario.blocks|selectattr('level', 'equalto', 'critical')|list %}
+      <p class="small" style="margin-top:12px"><strong>{{ strained|length }} of {{ scenario.blocks|length }}</strong> blocks in deficit at default capacity</p>
+      {% else %}
+      <p class="small" style="margin-top:12px"><strong>{{ headline.cagr|pct(2) }}</strong> annual output growth since {{ headline.first.season }}</p>
+      {% endif %}
+      <span class="go">Open →</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

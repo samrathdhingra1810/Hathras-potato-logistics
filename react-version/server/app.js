@@ -1,7 +1,4 @@
 import express from 'express';
-import path from 'node:path';
-import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import {
   DISTRICT,
   PRODUCTION_SERIES,
@@ -15,8 +12,8 @@ import {
 import { forecastSeries, withYoY } from '../shared/engine/analytics.js';
 import { simulateStorageYear, storageDemand } from '../shared/engine/storage.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = Number(process.env.PORT) || 3001;
+// API routes only. Used by the local/production Node server (server/index.js)
+// and by the Vercel serverless function (api/index.js).
 const app = express();
 
 app.disable('x-powered-by');
@@ -74,13 +71,4 @@ app.post('/api/storage/simulate', (req, res) => {
 
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
 
-// In production, serve the built client from /dist.
-const dist = path.resolve(__dirname, '../dist');
-if (fs.existsSync(dist)) {
-  app.use(express.static(dist));
-  app.get('*', (_req, res) => res.sendFile(path.join(dist, 'index.html')));
-}
-
-app.listen(PORT, () => {
-  console.log(`API listening on http://localhost:${PORT}`);
-});
+export default app;

@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block title %}{{ site_name }} · Potato & cold storage data for Hathras{% endblock %}
+
+{% block content %}
+{% set h = headline %}{% set latest = h.latest %}{% set sim = scenario.simulation %}
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow">{{ district.name }} district · {{ district.state }}</span>
+      <h1>Potato harvest &amp; cold storage intelligence for <span>{{ district.name }}</span></h1>
+      <p class="lead">Six seasons of production data, a two-season harvest forecast and a capacity planner that shows when the district's cold stores run out of room. Free and open for farmers, storage operators, traders and planners.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{{ url_for('tool_planner') }}">Plan storage capacity →</a>
+        <a class="btn btn-ghost" href="{{ url_for('tools') }}">Explore all tools</a>
+      </div>
+      <ul class="hero-points">
+        <li>No sign-up</li>
+        <li>Data download in CSV</li>
+        <li>Assumptions clearly marked</li>
+      </ul>
+    </div>
+
+    <div class="card preview" aria-label="Production snapshot">
+      <div class="preview-head">
+        <div>
+          <div class="small muted">District potato production</div>
+          <div style="font-size:1.6rem;font-weight:700" class="tabular">{{ latest.production_t|tonnes(compact=False) }}</div>
+        </div>
+        {{ m.badge(sim.status, 'Peak storage ' ~ (sim.peak_utilisation|pct(0)) ~ ' · ' ~ scenario.inputs.season) }}
+      </div>
+      <ul class="legend">
+        <li><span class="sw" style="--c:var(--series-1)"></span>Actual</li>
+        <li><span class="sw dash" style="--c:var(--series-1)"></span>Forecast</li>
+        <li><span class="sw band" style="--c:var(--band-1)"></span>95% interval</li>
+      </ul>
+      <div class="chart-box short"><canvas id="hero-chart" aria-label="Production by season with forecast"></canvas></div>
+      <dl class="mini-stats" style="margin:14px 0 0">
+        <div><dt>YoY growth</dt><dd class="{{ 'up' if latest.production_yoy > 0 else 'down' }}">{{ latest.production_yoy|pct(2, True) }}</dd></div>
+        <div><dt>Storage demand</dt><dd>{{ scenario.demand_t|tonnes }}</dd></div>
+        <div><dt>{{ forecast.rows[0].season }} forecast</dt><dd>{{ forecast.rows[0].production_t|tonnes }}</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="section-alt">
+  <div class="container stat-strip">
+    <div><div class="value tabular">{{ '%.3f'|format(latest.production_t / 1e6) }}M t</div><div class="label">Harvest, {{ latest.season }}</div></div>
+    <div><div class="value tabular">{{ latest.area_ha|num }} ha</div><div class="label">Area under potato</div></div>
+    <div><div class="value tabular">{{ '%.2f'|format(latest.yield_kg_ha / 1000) }} t/ha</div><div class="label">Average yield</div></div>
+    <div><div class="value tabular">{{ h.cagr|pct(2) }}</div><div class="label">Annual growth since {{ h.first.season }}</div></div>
+    <div><div class="value tabular">{{ scenario.demand_t|tonnes }}</div><div class="label">Cold storage demand (75%)</div></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Tools</span>
+      <h2>Everything you need to plan the post-harvest season</h2>
+      <p class="lead">Each tool works on the same district dataset, so the numbers agree from one page to the next.</p>
+    </div>
+    <div class="grid grid-4">
+      {% set icons = {'production': '▤', 'forecast': '↗', 'planner': '▦', 'map': '◎'} %}
+      {% for t in tools %}
+      <a class="card card-link feature" href="{{ url_for(t.endpoint) }}">
+        <div class="icon" aria-hidden="true">{{ icons[t.slug] }}</div>
+        <h3>{{ t.name }}</h3>
+        <p>{{ t.blurb }}</p>
+        <span class="go">Open tool →</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container split split-3-2" style="align-items:center">
+    <div class="card">
+      <div class="card-head">
+        <div><h3>Storage outlook · {{ scenario.inputs.season }}</h3><p>Stock held vs district capacity by month, default assumptions</p></div>
+        {{ m.badge(sim.status) }}
+      </div>
+      <div class="card-body">
+        <ul class="legend">
+          <li><span class="sw box" style="--c:var(--series-1)"></span>Stock in cold storage</li>
+          <li><span class="sw box" style="--c:var(--status-critical)"></span>Unmet demand</li>
+          <li><span class="sw" style="--c:var(--ink)"></span>Capacity</li>
+          <li><span class="sw dash" style="--c:var(--status-serious)"></span>Alert threshold</li>
+        </ul>
+        <div class="chart-box"><canvas id="outlook-chart" aria-label="Monthly cold storage stock against capacity"></canvas></div>
+      </div>
+    </div>
+    <div>
+      <span class="eyebrow">Capacity planner</span>
+      <h2>Know where the peak-harvest crunch will hit</h2>
+      <p class="lead">Potatoes are dug from late February and most go into cold storage by April. If capacity falls short, the surplus is sold at harvest prices or moved out of the district.</p>
+      {% if sim.total_overflow_t > 0 %}
+      <div class="alert lvl-critical" style="margin:18px 0"><i aria-hidden="true">■</i><div><strong>{{ sim.total_overflow_t|tonnes }} without a cold-chain slot in {{ sim.deficit_months|join(', ') }}</strong><p>At the placeholder capacity of {{ scenario.inputs.capacity|tonnes }}. Set your own figure in the planner.</p></div></div>
+      {% endif %}
+      <ul class="check-list">
+        <li>Adjust district capacity, storage share and alert threshold</li>
+        <li>Compare this season with the 2024-25 and 2025-26 forecasts</li>
+        <li>See how much of regional demand your own facility covers</li>
+      </ul>
+      <p style="margin-top:20px"><a class="btn btn-primary" href="{{ url_for('tool_planner') }}">Open the planner</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head center">
+      <span class="eyebrow">How it works</span>
+      <h2>From district data to a storage plan</h2>
+    </div>
+    <div class="steps">
+      <div class="card"><h3>Start from the district record</h3><p>Area, production and yield for every season from 2018-19 to 2023-24.</p></div>
+      <div class="card"><h3>Project the next harvests</h3><p>A linear trend gives the expected 2024-25 and 2025-26 crop, with an honest uncertainty band.</p></div>
+      <div class="card"><h3>Match demand to capacity</h3><p>A month-by-month model loads the crop into cold storage and releases it through the year.</p></div>
+      <div class="card"><h3>Act on the gaps</h3><p>Deficit months and strained blocks are flagged, so you can plan space, transport or sales early.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Who it's for</span>
+      <h2>Built for everyone in the potato supply chain</h2>
+    </div>
+    <div class="grid grid-4">
+      <div class="card feature"><div class="icon" aria-hidden="true">✿</div><h3>Farmers &amp; FPOs</h3><p>See whether storage space is likely to be tight this season before you book or sell.</p></div>
+      <div class="card feature"><div class="icon" aria-hidden="true">❄</div><h3>Cold storage operators</h3><p>Size expansions against the forecast, and see your share of regional demand.</p></div>
+      <div class="card feature"><div class="icon" aria-hidden="true">⇄</div><h3>Traders &amp; logistics</h3><p>Anticipate distress-sale months and plan out-of-district movement.</p></div>
+      <div class="card feature"><div class="icon" aria-hidden="true">⌂</div><h3>Planners &amp; officials</h3><p>Identify blocks where new capacity would relieve the most pressure.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="cta">
+      <h2>Open data, transparent assumptions</h2>
+      <p>Download the district series, read the methodology, and see exactly which figures are measured and which are planning estimates.</p>
+      <a class="btn btn-primary" href="{{ url_for('data') }}">Get the data</a>
+      <a class="btn btn-ghost" href="{{ url_for('about') }}" style="margin-left:8px">Methodology</a>
+    </div>
+  </div>
+</section>
+
+{{ m.page_data({'series': series, 'forecast': forecast, 'scenario': scenario}) }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+  (function () {
+    var d = HP.pageData();
+    HP.chart('hero-chart', function () { return HP.forecastConfig(d.series, d.forecast.rows, 'production', { compact: true }); });
+    HP.chart('outlook-chart', function () { return HP.storageConfig(d.scenario); });
+  })();
+</script>
+{% endblock %}

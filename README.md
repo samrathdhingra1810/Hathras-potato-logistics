@@ -1,66 +1,61 @@
-# Hathras Potato Logistics & Cold Storage Optimization Dashboard
+# Hathras Potato Logistics
 
-Production analytics and cold-storage capacity planning for potato in Hathras district, Uttar Pradesh.
+An open information portal for potato production and cold storage planning in Hathras district, Uttar Pradesh. Built with Python and Flask; charts use Chart.js and the map uses Leaflet (both loaded from cdnjs, so there is no build step).
 
-- **Frontend:** React 18 + Vite 5, Tailwind CSS 3, Recharts, Leaflet (react-leaflet)
-- **Backend:** Express API serving the baseline dataset, forecasts and storage simulations; serves the built client in production
-- **Shared:** dataset and calculation engines in `shared/`, imported by both server and client
-
-## Run
+## Run locally
 
 ```bash
-npm install
-npm run dev        # API on :3001, Vite on :5173 (proxies /api)
-npm test           # engine unit tests (node:test)
-npm run build && npm start   # production: http://localhost:3001
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python run.py          # http://127.0.0.1:5000
+.venv/bin/python -m unittest discover -s tests -t .
 ```
 
-Requires Node 18.18+.
+## Pages
 
-## Modules
-
-| Module | What it does |
+| Path | Page |
 |---|---|
-| Executive overview | Latest production, cold storage demand (storage share × harvest), YoY growth, yield |
-| Production & yield analytics | Area vs output (indexed to 2018-19 = 100, or absolute small multiples), yield trend, data table |
-| Forecast | OLS linear trend per metric with a 95% prediction interval for 2024-25 and 2025-26 |
-| Capacity planner | Facility and district capacity sliders, market-share coverage, monthly stock-vs-capacity simulation, Feb–Apr deficit alerts |
-| Block map | Leaflet map centred on 27.5968° N, 78.0519° E with strain-coloured block markers |
-
-## Data provenance
-
-`shared/dataset.js` separates **supplied data** from **planning assumptions**:
-
-| Item | Status |
-|---|---|
-| District area / production / yield, 2018-19 → 2023-24 | Supplied in the project brief. Cross-check against UP Directorate of Horticulture or DES district APY releases. |
-| 75% share of harvest stored | From the brief; adjustable in the UI |
-| District cold storage capacity (950,000 t default) | **Assumption.** Replace with the registered capacity. |
-| Monthly intake (Feb 18% / Mar 57% / Apr 25%) and release (May–Nov) profiles | **Assumption** |
-| Block production and capacity shares, block HQ coordinates | **Assumption / approximate** |
-
-Assumptions are tagged in the UI so nobody mistakes them for measured figures.
+| `/` | Home: hero snapshot, key numbers, tools, storage outlook, audiences |
+| `/tools` | Tools overview with headline KPIs |
+| `/tools/production` | Area vs output (indexed or absolute), yield trend, season table |
+| `/tools/forecast` | OLS trend forecast for the next two seasons with a 95% interval |
+| `/tools/planner` | Capacity planner: sliders, deficit alert, monthly stock chart (shareable URL) |
+| `/tools/map` | Block strain map and ranking |
+| `/data` | Dataset, assumptions, block shares, CSV download, API list |
+| `/services`, `/about` | What the portal offers; methodology and data provenance |
 
 ## API
 
-| Method | Path | Returns |
-|---|---|---|
-| GET | `/api/baseline` | District, series, blocks, default assumptions |
-| GET | `/api/production` | Series with YoY changes |
-| GET | `/api/forecast?horizon=2` | Forecast rows (1–5 seasons) and model stats |
-| POST | `/api/storage/simulate` | `{ productionT, storageRatio, capacityT, alertThreshold }` → monthly simulation |
-
-If the API is unreachable the client falls back to the bundled dataset, so `dist/` also works as a static site.
+| Endpoint | Returns |
+|---|---|
+| `GET /api/baseline` | Series with YoY, blocks, assumptions |
+| `GET /api/forecast?horizon=2` | Forecast rows (1–5 seasons) and model stats |
+| `GET` or `POST /api/scenario` | `season, capacity, ratio, threshold, facility` → full storage simulation and block strain |
+| `GET /data/production.csv` | District series as CSV |
 
 ## Layout
 
 ```
-server/index.js            Express API + static hosting
-shared/dataset.js          Baseline data and assumptions
-shared/engine/analytics.js YoY, CAGR, OLS regression, forecasting
-shared/engine/storage.js   Demand, coverage, monthly stock simulation, block strain
-src/services/              API client with fallback, number formatting
-src/hooks/                 Theme and data loading
-src/components/ui|charts|layout
-src/views/                 Overview, ProductionAnalytics, StoragePlanner, GisView
+portal/__init__.py      Flask app, routes, API
+portal/core/dataset.py  Supplied data and planning assumptions (edit here)
+portal/core/analytics.py  YoY, CAGR, OLS forecast
+portal/core/storage.py  Storage demand, monthly simulation, block strain
+portal/templates/       Jinja pages (base, home, about, services, data, tools/*)
+portal/static/          site.css, site.js, charts.js, planner.js, map.js
+api/index.py            Vercel entry point
+run.py                  Local dev server
+tests/                  unittest suite for the core engine
+react-version/          Earlier React/Vite dashboard, kept for reference
+```
+
+## Data provenance
+
+The district area, production and yield series (2018-19 to 2023-24) is as supplied in the project brief; cross-check it against UP Directorate of Horticulture or DES releases. District cold storage capacity (950,000 t), the monthly intake and release profiles, and the block split are **planning assumptions**, labelled as such on the site.
+
+## Deploy
+
+`vercel.json` routes every request to the Flask app through `api/index.py`.
+
+```bash
+npx vercel deploy --prod
 ```
