@@ -19,9 +19,9 @@
         ('%.1fk'|format(sim.total_overflow_t / 1000), 'Tonne storage deficit causing localized bottlenecks, at the 950k t placeholder capacity.'),
         (scenario.blocks|length|string, 'Development blocks mapped down to local cold storage capacity.'),
       ] %}
-      <div class="group bg-slate-900/60 p-6 rounded-2xl border border-slate-800 backdrop-blur-md hover:border-slate-700 hover:shadow-[0_0_30px_rgba(59,130,246,0.12)] transition-all duration-300">
-        <div class="text-4xl font-extrabold text-blue-400 mb-2 font-mono group-hover:scale-[1.02] transition-transform origin-left">{{ num }}</div>
-        <p class="text-sm text-slate-400 leading-relaxed m-0">{{ label }}</p>
+      <div class="group p-6 bg-gradient-to-b from-slate-900/80 via-slate-900/40 to-slate-950/60 backdrop-blur-md rounded-2xl border-t border-x border-b border-slate-800/80 border-t-slate-700/60 hover:border-slate-600/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10">
+        <div class="text-4xl lg:text-5xl font-extrabold tracking-tight text-white drop-shadow-[0_0_15px_rgba(59,130,246,0.4)] mb-3 group-hover:scale-[1.02] transition-transform origin-left">{{ num }}</div>
+        <p class="text-slate-400 text-sm font-medium leading-relaxed m-0">{{ label }}</p>
       </div>
       {% endfor %}
     </div>
