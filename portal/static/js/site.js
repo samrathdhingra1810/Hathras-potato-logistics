@@ -84,7 +84,7 @@
     if (a.origin !== location.origin || a.target === '_blank') return;
     if (a.pathname === location.pathname && a.hash) return;
     e.preventDefault();
-    window.CF.navigate(a.href, a.matches('.cf-role, .cf-gw-link, .cf-btn') ? a : null);
+    window.CF.navigate(a.href, a.classList.contains('tile') ? a : null);
   });
   // An interrupted transition (fast double navigation) is harmless; don't surface it as an error.
   ['pageswap', 'pagereveal'].forEach(function (ev) {
@@ -96,7 +96,7 @@
   window.addEventListener('pageshow', function () { document.body.classList.remove('is-leaving'); });
 
   // ---- Offline support (PWA) ----
-  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
   }
   function netBadge() { document.documentElement.classList.toggle('is-offline', !navigator.onLine); }

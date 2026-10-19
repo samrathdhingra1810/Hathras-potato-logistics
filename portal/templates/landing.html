@@ -1,13 +1,135 @@
 {% extends "base.html" %}
-{% block title %}ColdFlow · Precision Cold-Chain Analytics for Hathras{% endblock %}
-{% block description %}Precision cold-chain analytics and district harvest logistics: potato forecasts, cold storage strain by block, and capacity planning for Hathras, Uttar Pradesh.{% endblock %}
+{% import "macros.html" as m with context %}
+{% block title %}ColdFlow · Cold storage planning for every harvest{% endblock %}
 {% block body_class %}home{% endblock %}
 
 {% block content %}
-{% set h = headline %}{% set latest = h.latest %}{% set sim = scenario.simulation %}
-{% include "home/_hero.html" %}
-{% include "home/_metrics.html" %}
-{% include "home/_roles.html" %}
-{% include "home/_steps.html" %}
-{% include "home/_gateway.html" %}
+{% set h = headline %}{% set latest = h.latest %}{% set sim = scenario.simulation %}{% set i = scenario.inputs %}
+{% set util = sim.peak_utilisation %}
+<section class="launch">
+  <div class="launch-bg" aria-hidden="true"><span class="orb orb-a"></span><span class="orb orb-b"></span></div>
+
+  <div class="container launch-grid">
+    <div class="launch-copy">
+      <span class="live-pill"><i aria-hidden="true"></i>Live for Hathras · {{ district.state }}</span>
+      <h1 class="launch-title">Every harvest,<br><span>a place to go.</span></h1>
+      <p class="launch-lead">ColdFlow forecasts the potato crop, loads it into cold storage month by month, and shows where capacity runs out, for Hathras or your own district.</p>
+
+      <form class="ask-bar" id="ask-form" role="search" aria-label="Ask ColdFlow">
+        <span class="ask-spark" aria-hidden="true">✦</span>
+        <label for="ask-input" class="sr-only">Ask ColdFlow a question</label>
+        <input id="ask-input" name="q" autocomplete="off" maxlength="300" placeholder="Ask anything, e.g. how much storage does Hathras need?">
+        <button class="btn btn-primary btn-sm" type="submit">Ask</button>
+      </form>
+      <div class="ask-chips">
+        <button type="button" data-ask="Which blocks face the highest shortage risk in April?">Shortage risk in April</button>
+        <button type="button" data-ask="Compare this year's harvest forecast with the 5-year average.">Forecast vs 5-year average</button>
+        <button type="button" data-ask="Recommend optimal capacity expansion for next season.">Capacity expansion advice</button>
+      </div>
+    </div>
+
+    <div class="monitor card" aria-label="Hathras storage monitor">
+      <div class="monitor-head">
+        <div>
+          <div class="monitor-kicker">Storage monitor</div>
+          <strong>Hathras · {{ i.season }}</strong>
+        </div>
+        {{ m.badge(sim.status) }}
+      </div>
+      <div class="monitor-body">
+        <div class="gauge" style="--p: {{ [util, 1.25]|min / 1.25 }}" role="img" aria-label="Peak utilisation {{ util|pct(0) }}">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="gauge-track" cx="60" cy="60" r="50"></circle>
+            <circle class="gauge-cap" cx="60" cy="60" r="50" style="--cap: {{ 1 / 1.25 }}"></circle>
+            <circle class="gauge-fill lvl-{{ sim.status }}" cx="60" cy="60" r="50"></circle>
+          </svg>
+          <div class="gauge-label"><strong class="tabular" data-count="{{ (util * 100)|round|int }}">{{ util|pct(0) }}</strong><span>peak in {{ sim.peak_month }}</span></div>
+        </div>
+        <dl class="monitor-stats">
+          <div><dt>Harvest</dt><dd class="tabular">{{ scenario.production_t|tonnes }}</dd></div>
+          <div><dt>Storage demand</dt><dd class="tabular">{{ scenario.demand_t|tonnes }}</dd></div>
+          <div><dt>Without space</dt><dd class="tabular {{ 'down' if sim.total_overflow_t > 0 else '' }}">{{ sim.total_overflow_t|tonnes }}</dd></div>
+          <div><dt>Capacity needed</dt><dd class="tabular">{{ sim.capacity_needed_t|tonnes }}</dd></div>
+        </dl>
+      </div>
+      {% set top = [sim.capacity_needed_t, i.capacity]|max * 1.08 %}
+      <div class="month-strip" role="img" aria-label="Monthly stock against capacity">
+        <span class="cap-line" style="--cap: {{ (i.capacity / top)|round(4) }}"><em>capacity</em></span>
+        {% for mo in sim.months %}
+        <div class="mcol{% if mo.peak_harvest %} peak{% endif %}">
+          <span class="bar" style="--h: {{ (mo.stock / top * 100)|round(1) }}%; --d: {{ loop.index0 * 45 }}ms"></span>
+          {% if mo.unmet > 0 %}<span class="bar over" style="--h: {{ (mo.unmet / top * 100)|round(1) }}%; --b: {{ (mo.stock / top * 100)|round(1) }}%; --d: {{ loop.index0 * 45 + 300 }}ms"></span>{% endif %}
+          <i>{{ mo.month[:1] }}</i>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="monitor-note">Placeholder capacity {{ i.capacity|tonnes }}. <a href="{{ url_for('tool_planner') }}" data-transition>Change it →</a></p>
+    </div>
+  </div>
+
+  <nav class="container launch-tiles" aria-label="Start">
+    <a class="tile" href="{{ url_for('plan') }}" data-transition>
+      <span class="tile-ico" aria-hidden="true">✎</span>
+      <span class="tile-txt"><strong>Plan your data</strong><span>Forecast &amp; storage for any district or cold store</span></span>
+      <span class="tile-go" aria-hidden="true">→</span>
+    </a>
+    <a class="tile" href="{{ url_for('hathras') }}" data-transition>
+      <span class="tile-ico" aria-hidden="true">◎</span>
+      <span class="tile-txt"><strong>Hathras example</strong><span>The full district dashboard and map</span></span>
+      <span class="tile-go" aria-hidden="true">→</span>
+    </a>
+    <a class="tile" href="{{ url_for('tool_planner') }}" data-transition>
+      <span class="tile-ico" aria-hidden="true">▦</span>
+      <span class="tile-txt"><strong>Capacity planner</strong><span>What-if capacity in seconds</span></span>
+      <span class="tile-go" aria-hidden="true">→</span>
+    </a>
+    <button class="tile" type="button" data-open-assistant>
+      <span class="tile-ico ai" aria-hidden="true">✦</span>
+      <span class="tile-txt"><strong>Ask the assistant</strong><span>AI answers from ColdFlow's engine</span></span>
+      <span class="tile-go" aria-hidden="true">→</span>
+    </button>
+  </nav>
+
+  <div class="container launch-foot">
+    <span>© {{ year }} ColdFlow</span>
+    <a href="{{ url_for('about') }}">About</a>
+    <a href="{{ url_for('services') }}">Services</a>
+    <a href="{{ url_for('privacy') }}">Privacy</a>
+    <a href="{{ url_for('terms') }}">Terms</a>
+    <span class="launch-kbd">Press <kbd>⌘</kbd><kbd>K</kbd> to search</span>
+  </div>
+</section>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var form = document.getElementById('ask-form');
+    var input = document.getElementById('ask-input');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var q = input.value.trim();
+      if (window.CFAssistant) window.CFAssistant.open(q || undefined, !!q);
+      input.value = '';
+    });
+    document.querySelectorAll('[data-ask]').forEach(function (b) {
+      b.addEventListener('click', function () { window.CFAssistant && window.CFAssistant.open(b.dataset.ask, true); });
+    });
+    // Count the gauge number up once.
+    var el = document.querySelector('[data-count]');
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (el && !reduce) {
+      var target = +el.dataset.count, t0 = null;
+      var step = function (t) {
+        if (!t0) t0 = t;
+        var k = Math.min((t - t0) / 1100, 1);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - k, 3))) + '%';
+        if (k < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+  })();
+</script>
 {% endblock %}
