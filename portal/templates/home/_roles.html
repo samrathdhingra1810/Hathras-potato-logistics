@@ -6,13 +6,13 @@
       ('border-t-cyan-500', '❄️', 'Cold storage operators', 'Monitor regional capacity strain, estimate holding power costs, and see which blocks will send overflow stock.', 'owner'),
       ('border-t-amber-500', '🌾', 'FPOs & farmer collectives', 'Find the nearest blocks with storage space, know when to book before stores fill, and avoid distress sales.', 'fpo'),
     ] %}
-    <div class="bg-slate-900/40 rounded-2xl p-6 border border-slate-800 border-t-2 {{ accent }} relative overflow-hidden flex flex-col justify-between transition-all duration-200 hover:-translate-y-1">
+    <div class="group bg-slate-900/40 hover:bg-slate-900/60 rounded-2xl p-6 border border-slate-800 border-t-2 {{ accent }} relative overflow-hidden flex flex-col justify-between transition-all duration-200 hover:-translate-y-1">
       <div>
         <div class="text-2xl mb-3" aria-hidden="true">{{ icon }}</div>
         <h3 class="text-lg font-bold text-white mb-2">{{ title }}</h3>
         <p class="text-sm text-slate-400 leading-relaxed mb-6">{{ body }}</p>
       </div>
-      <a href="{{ url_for('workspace', role=role) }}" data-transition class="text-sm font-semibold text-blue-400 hover:text-blue-300">Open workspace →</a>
+      <a href="{{ url_for('workspace', role=role) }}" data-transition class="inline-flex items-center gap-1 text-sm font-semibold text-blue-400 hover:text-blue-300 hover:no-underline">Open workspace <span class="inline-block group-hover:translate-x-1 transition-transform" aria-hidden="true">→</span></a>
     </div>
     {% endfor %}
   </div>

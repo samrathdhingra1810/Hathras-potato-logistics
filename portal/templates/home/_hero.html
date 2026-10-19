@@ -1,16 +1,18 @@
 <section class="flex flex-col items-center text-center py-20 px-4" aria-labelledby="cf-title">
   <div class="flex flex-wrap justify-center gap-2 mb-6" role="list" aria-label="Live Hathras signals">
     {% for c in chips %}
-    <span role="listitem" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs text-slate-300 shadow-sm">
+    {% set dot = {'bad': 'bg-rose-500 animate-pulse', 'warn': 'bg-amber-500 animate-pulse', 'good': 'bg-emerald-500', 'neutral': 'bg-slate-500'}[c.tone] %}
+    <span role="listitem" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/70 border border-slate-800 text-xs text-slate-300 shadow-sm backdrop-blur-md hover:border-slate-700 transition-all">
+      <span class="w-1.5 h-1.5 rounded-full {{ dot }}" aria-hidden="true"></span>
       <span aria-hidden="true">{{ c.icon }}</span>{{ c.text }}
     </span>
     {% endfor %}
   </div>
-  <h1 id="cf-title" class="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-4">Cold Flow</h1>
+  <h1 id="cf-title" class="text-5xl md:text-7xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent mb-4 pb-1">Cold Flow</h1>
   <p class="text-lg text-slate-400 max-w-2xl mb-8">Precision Cold-Chain Analytics &amp; District Harvest Logistics</p>
   <div class="flex flex-wrap gap-4 justify-center">
     <a href="{{ url_for('tool_map') }}" data-transition class="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-lg shadow-blue-500/20 no-underline hover:no-underline">Explore Hathras Map →</a>
-    <a href="{{ url_for('plan') }}" data-transition class="px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold transition-all no-underline hover:no-underline">Open Capacity Planner</a>
+    <a href="{{ url_for('plan') }}" data-transition class="px-6 py-3 rounded-xl bg-slate-900/70 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 backdrop-blur-md text-slate-200 font-semibold transition-all no-underline hover:no-underline">Open Capacity Planner</a>
   </div>
   <p class="text-xs text-slate-500 mt-6">Live figures from the {{ latest.season }} district series and planning assumptions.
     <a href="{{ url_for('about') }}#methodology" class="text-blue-400 hover:text-blue-300">How it's calculated</a></p>

@@ -1,3 +1,7 @@
+/* With preflight disabled, `base` only emits Tailwind's --tw-* variable defaults
+   (needed by transform, filter, gradient and ring utilities). */
+@tailwind base;
+
 /* Tailwind's preflight border reset, scoped to the home page so `border` utilities draw. */
 .tw *, .tw *::before, .tw *::after { border-width: 0; border-style: solid; border-color: #e5e7eb; }
 
