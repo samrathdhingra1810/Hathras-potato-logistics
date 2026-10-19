@@ -1,0 +1,24 @@
+{# Dark "scale of the problem" strip; every number comes from the engine. #}
+<section class="cf-metrics" aria-labelledby="cf-metrics-title">
+  <div class="container">
+    <h2 id="cf-metrics-title" class="cf-metrics-title">The scale of the problem</h2>
+    <dl class="cf-metric-grid">
+      <div class="cf-metric">
+        <dt class="cf-metric-num">{{ '%.2f'|format(latest.production_t / 1e6) }}M</dt>
+        <dd>Tonnes of potatoes harvested across Hathras district in {{ latest.season }}.</dd>
+      </div>
+      <div class="cf-metric">
+        <dt class="cf-metric-num">{{ (sim.peak_utilisation * 100)|round|int }}%</dt>
+        <dd>Peak strain on regional cold stores, reached in {{ {'Feb': 'February', 'Mar': 'March', 'Apr': 'April', 'May': 'May'}.get(sim.peak_month, sim.peak_month) }}.</dd>
+      </div>
+      <div class="cf-metric">
+        <dt class="cf-metric-num">{{ '%.1f'|format(sim.total_overflow_t / 1000) }}k</dt>
+        <dd>Tonne storage deficit causing local bottlenecks, at the 950k t placeholder capacity.</dd>
+      </div>
+      <div class="cf-metric">
+        <dt class="cf-metric-num">{{ scenario.blocks|length }}</dt>
+        <dd>Development blocks mapped down to local storage capacity.</dd>
+      </div>
+    </dl>
+  </div>
+</section>

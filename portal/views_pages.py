@@ -20,8 +20,10 @@ from .scenario import hathras_scenario
 def init_app(app):
     @app.get("/")
     def home():
-        return render_template("landing.html", scenario=hathras_scenario({}),
-                               forecast=forecast_series(ds.PRODUCTION_SERIES, 2))
+        scenario = hathras_scenario({})
+        forecast = forecast_series(ds.PRODUCTION_SERIES, 2)
+        return render_template("landing.html", scenario=scenario, forecast=forecast,
+                               chips=home_chips(scenario, forecast))
 
     @app.get("/hathras")
     def hathras():
@@ -133,3 +135,34 @@ def init_app(app):
     @app.get("/terms")
     def terms():
         return render_template("legal/terms.html")
+
+
+def _kt(t: float) -> str:
+    return f"{abs(t) / 1000:.1f}k T" if abs(t) < 1e5 else f"{abs(t) / 1000:.0f}k T"
+
+
+def home_chips(scenario: dict, forecast: dict) -> list[dict]:
+    """Floating hero chips, computed from the live Hathras scenario (never hard-coded figures)."""
+    blocks = {b["id"]: b for b in scenario["blocks"]}
+
+    def gap(bid):
+        b = blocks[bid]
+        sign = "+" if b["gap_t"] >= 0 else "−"
+        return {"icon": "📍", "text": f"{b['name']} ({sign}{_kt(b['gap_t'])})", "tone": "good" if b["gap_t"] >= 0 else "bad"}
+
+    def full(bid):
+        b = blocks[bid]
+        return {"icon": "📍", "text": f"{b['name']} ({b['utilisation'] * 100:.0f}% full)",
+                "tone": "bad" if b["utilisation"] > 1 else "warn" if b["utilisation"] >= 0.75 else "good"}
+
+    sim = scenario["simulation"]
+    peak_intake = max(sim["months"], key=lambda m: m["intake"])["month"]
+    month_name = {"Feb": "February", "Mar": "March", "Apr": "April"}.get(peak_intake, peak_intake)
+    nxt = forecast["rows"][0]
+    return [
+        gap("sadabad"), gap("sikandra-rao"), full("sasni"),
+        {"icon": "🌾", "text": f"{month_name} harvest peak", "tone": "neutral"},
+        gap("mursan"), full("hathras"),
+        {"icon": "📈", "text": f"{nxt['season']}: {nxt['production_t'] / 1e6:.2f}M T forecast", "tone": "neutral"},
+        {"icon": "❄️", "text": f"Peak strain {sim['peak_utilisation'] * 100:.0f}% in {sim['peak_month']}", "tone": "bad" if sim["peak_utilisation"] > 1 else "warn"},
+    ]
