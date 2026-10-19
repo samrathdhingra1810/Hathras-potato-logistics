@@ -94,6 +94,12 @@ class FeatureRouteTests(unittest.TestCase):
         self.assertEqual(self.c.get("/api/districts/agra").status_code, 404)
         sw = self.c.get("/sw.js")
         self.assertEqual(sw.headers["Service-Worker-Allowed"], "/")
+        v = self.app.config["STATIC_VERSION"]
+        body = sw.get_data(as_text=True)
+        self.assertIn(f"coldflow-{v}", body)
+        self.assertNotIn("{{", body)
+        # Pages reference content-versioned assets, so a deploy busts browser and SW caches.
+        self.assertIn(f"/static/css/site.css?v={v}", self.c.get("/").get_data(as_text=True))
         self.assertIn("standalone", self.c.get("/manifest.webmanifest").get_data(as_text=True))
         self.assertEqual(self.c.get("/offline").status_code, 200)
 

@@ -1,6 +1,7 @@
 """ColdFlow: cold storage planning for every harvest (Flask app factory)."""
 from __future__ import annotations
 
+import hashlib
 import os
 import secrets
 from datetime import date, timedelta
@@ -44,6 +45,14 @@ def create_app(test_config: dict | None = None) -> Flask:
     )
     if test_config:
         app.config.update(test_config)
+
+    app.config["STATIC_VERSION"] = static_version(app.static_folder)
+
+    @app.url_defaults
+    def version_static_urls(endpoint, values):
+        # Content-hashed ?v= so browsers and the service worker fetch new assets after each deploy.
+        if endpoint == "static" and "v" not in values:
+            values["v"] = app.config["STATIC_VERSION"]
 
     app.jinja_env.filters.update(FILTERS)
     app.json.sort_keys = False
@@ -91,6 +100,18 @@ def create_app(test_config: dict | None = None) -> Flask:
         return resp
 
     return app
+
+
+def static_version(folder: str) -> str:
+    """Short hash of every static file's contents; changes whenever any asset changes."""
+    h = hashlib.sha256()
+    for root, _dirs, files in sorted(os.walk(folder)):
+        for name in sorted(files):
+            path = os.path.join(root, name)
+            h.update(os.path.relpath(path, folder).encode())
+            with open(path, "rb") as f:
+                h.update(f.read())
+    return h.hexdigest()[:10]
 
 
 app = create_app()

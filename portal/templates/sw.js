@@ -3,12 +3,14 @@
 // - Pages and GET API calls: network-first, falling back to the last cached copy,
 //   then to the offline page.
 // - POSTs (assistant, analysis, saves) always go to the network.
-const VERSION = 'coldflow-v1';
+// Rendered by Flask: VERSION changes with every asset change, so old caches are dropped.
+const VERSION = 'coldflow-{{ version }}';
+const V = '?v={{ version }}';
 const CORE = [
   '/', '/plan', '/hathras', '/tools/planner', '/tools/forecast', '/tools/map', '/offline',
-  '/static/css/site.css', '/static/js/site.js', '/static/js/charts.js', '/static/js/assistant.js',
-  '/static/js/palette.js', '/static/js/planner.js', '/static/js/plan.js', '/static/js/map.js',
-  '/static/img/mark.svg',
+  '/static/css/site.css' + V, '/static/css/home.css' + V, '/static/js/site.js' + V, '/static/js/charts.js' + V, '/static/js/assistant.js' + V,
+  '/static/js/palette.js' + V, '/static/js/planner.js' + V, '/static/js/plan.js' + V, '/static/js/map.js' + V,
+  '/static/img/mark.svg' + V,
 ];
 
 self.addEventListener('install', (event) => {

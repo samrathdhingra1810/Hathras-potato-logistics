@@ -119,7 +119,8 @@ def init_app(app):
     @app.get("/sw.js")
     def service_worker():
         # Served from the root so it can control every page.
-        resp = send_from_directory(current_app.static_folder, "sw.js", mimetype="application/javascript")
+        v = current_app.config["STATIC_VERSION"]
+        resp = Response(render_template("sw.js", version=v), mimetype="application/javascript")
         resp.headers["Cache-Control"] = "no-cache"
         resp.headers["Service-Worker-Allowed"] = "/"
         return resp
