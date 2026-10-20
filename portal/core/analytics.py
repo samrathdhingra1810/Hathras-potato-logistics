@@ -80,6 +80,16 @@ def forecast_seasons(series: list[dict], horizon: int = 2) -> list[str]:
     return [next_season(series[-1]["season"], k) for k in range(1, horizon + 1)]
 
 
+def harvested_seasons(seasons: list[str], today) -> list[str]:
+    """Seasons whose harvest is already over on `today`.
+
+    A season 'YYYY-YY' is dug Feb–Mar of its second year and loaded into cold
+    storage by April (dataset.MONTHLY_INTAKE_PROFILE), so it counts as harvested
+    from 1 May of that year. Used only to label forecasts; it adds no data.
+    """
+    return [s for s in seasons if (today.year, today.month) >= (int(s[:4]) + 1, 5)]
+
+
 def forecast_series(series: list[dict], horizon: int = 2) -> dict:
     """Independent linear trend per metric against the season index."""
     xs = list(range(len(series)))

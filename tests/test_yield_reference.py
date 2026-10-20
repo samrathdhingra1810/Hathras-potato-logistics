@@ -93,6 +93,38 @@ class ForecastSeasonLabelTests(unittest.TestCase):
             html = c.get(path).get_data(as_text=True)
             self.assertIn(f"{fs[0]} and {fs[1]}", html)
 
+    def test_harvested_seasons_by_date(self):
+        from datetime import date
+        from portal.core.analytics import harvested_seasons
+
+        seasons = ["2024-25", "2025-26"]
+        self.assertEqual(harvested_seasons(seasons, date(2025, 4, 30)), [])           # 2024-25 still loading
+        self.assertEqual(harvested_seasons(seasons, date(2025, 5, 1)), ["2024-25"])
+        self.assertEqual(harvested_seasons(seasons, date(2026, 10, 20)), seasons)
+
+    def test_estimate_note_only_when_harvest_is_past(self):
+        from datetime import date
+        from unittest import mock
+
+        from portal import create_app
+
+        class Day(date):
+            fixed = None
+
+            @classmethod
+            def today(cls):
+                return cls.fixed
+
+        for fixed, expect in ((date(2026, 10, 20), True), (date(2025, 1, 15), False)):
+            Day.fixed = fixed
+            with mock.patch("portal.date", Day):
+                c = create_app({"TESTING": True}).test_client()
+                for path in ("/tools/forecast", "/tools/planner", "/hathras"):
+                    html = c.get(path).get_data(as_text=True)
+                    self.assertEqual("data-estimate-note" in html, expect, (fixed, path))
+                    if expect:
+                        self.assertIn("model estimates pending official data", html)
+
 
 if __name__ == "__main__":
     unittest.main()

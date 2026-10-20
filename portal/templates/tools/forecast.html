@@ -9,6 +9,7 @@
     <div class="crumbs"><a href="{{ url_for('hathras') }}">Hathras</a> / <a href="{{ url_for('tools') }}">Tools</a> / Forecast</div>
     <h1>Harvest forecast</h1>
     <p class="lead" style="max-width:720px">Where the trend puts {{ district.name }}'s potato crop in {{ rows[0].season }} and {{ rows[1].season }}, and how sure we can be.</p>
+    {{ m.estimate_note() }}
   </div>
 </section>
 <div class="container stack">

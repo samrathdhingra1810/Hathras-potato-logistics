@@ -105,6 +105,7 @@
         <li>Compare this season with the {{ forecast_seasons|join(' and ') }} forecasts</li>
         <li>See how much of regional demand your own facility covers</li>
       </ul>
+      {{ m.estimate_note() }}
       <p style="margin-top:20px"><a class="btn btn-primary" href="{{ url_for('tool_planner') }}">Open the planner</a></p>
     </div>
   </div>

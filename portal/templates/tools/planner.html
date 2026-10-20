@@ -9,6 +9,7 @@
     <div class="crumbs"><a href="{{ url_for('hathras') }}">Hathras</a> / <a href="{{ url_for('tools') }}">Tools</a> / Capacity planner</div>
     <h1>Cold storage capacity planner</h1>
     <p class="lead" style="max-width:760px">Load the season's harvest into the district's cold stores month by month and see where capacity runs out. Change the inputs; the link updates so you can share your scenario.</p>
+    {{ m.estimate_note() }}
     <p class="no-print" style="margin:14px 0 0"><button class="btn btn-ghost btn-sm" type="button" data-print>⇩ Report (PDF)</button> <button class="btn btn-ghost btn-sm" type="button" data-export="hathras">⇩ Excel report</button></p>
     <p class="print-only small">ColdFlow report · Hathras capacity planner · <span data-print-date></span></p>
   </div>

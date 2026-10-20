@@ -51,6 +51,12 @@
 </nav>
 {%- endmacro %}
 
+{% macro estimate_note() -%}
+{% if harvested_forecasts %}{% set n = harvested_forecasts|length %}
+<p class="small muted" data-estimate-note style="max-width:760px;margin:10px 0 0">Note: the {{ harvested_forecasts|join(' and ') }} harvest{{ 's have' if n > 1 else ' has' }} already taken place, but official figures aren't in ColdFlow's data yet (latest record: {{ headline.latest.season }}). The figures shown for {{ 'these seasons' if n > 1 else 'that season' }} are model estimates pending official data.</p>
+{% endif %}
+{%- endmacro %}
+
 {% macro page_data(payload) -%}
 <script type="application/json" id="page-data">{{ payload|tojson }}</script>
 {%- endmacro %}
