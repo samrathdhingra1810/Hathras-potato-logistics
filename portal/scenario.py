@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from .core import dataset as ds
-from .core.analytics import forecast_series, with_yoy
+from .core.analytics import forecast_series, season_status, with_yoy
 from .core.geo import nearest_with_headroom
 from .core.storage import (block_monthly, block_strain, facility_coverage, holding_economics,
                            simulate_storage_year, storage_demand)
@@ -49,7 +49,7 @@ def hathras_scenario(source) -> dict:
         "base_production_t": base_production,
         "economics": holding_economics(sim, kwh_per_t_month=w["kwh"], tariff_rs_kwh=w["tariff"],
                                        tariff_change=w["tariff_change"]),
-        "seasons": [{"value": s, "label": f"{s} {'actual' if s == series[-1]['season'] else 'forecast'}"} for s in seasons],
+        "seasons": [{"value": s, "label": f"{s} {'actual' if s == series[-1]['season'] else season_status(s)['status']}"} for s in seasons],
         "production_t": production,
         "demand_t": demand,
         "facility_coverage": facility_coverage(facility, demand),

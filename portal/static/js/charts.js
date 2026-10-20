@@ -272,12 +272,12 @@
     if (opts.compact) { o.scales.y.ticks.maxTicksLimit = 4; o.scales.x.ticks.maxRotation = 0; o.scales.x.ticks.autoSkip = true; }
     o.plugins.tooltip.filter = function (item) { return item.datasetIndex >= 2 && item.raw != null; };
     o.plugins.tooltip.callbacks = {
-      title: function (items) { var i = items[0].dataIndex; return labels[i] + (i >= n ? ' (forecast)' : ''); },
+      title: function (items) { var i = items[0].dataIndex; return labels[i] + (i >= n ? ' (' + (rows[i - n].status || 'forecast') + ')' : ''); },
       label: function (ctx) {
         var i = ctx.dataIndex;
         if (ctx.datasetIndex === 2) return ' Actual ' + fmt(ctx.parsed.y);
         if (i < n) return null;
-        return ' Projected ' + fmt(ctx.parsed.y);
+        return (rows[i - n].status === 'estimate' ? ' Estimated ' : ' Projected ') + fmt(ctx.parsed.y);
       },
       footer: function (items) {
         var i = items[0].dataIndex;

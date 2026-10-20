@@ -223,8 +223,9 @@ def report_xlsx(title: str, analysis: dict, *, blocks=None) -> bytes:
         frows = []
         for name, key in (("Linear trend", "linear"), ("Exponential smoothing", "smoothing")):
             for r in cm[key]["rows"]:
-                frows.append([name, r["season"], r["production_t"], r["production_lower"], r["production_upper"], r["yield_kg_ha"]])
-        _sheet_table(wb, "Forecast", ["Model", "Season", "Production (t)", "95% low", "95% high", "Yield (kg/ha)"], frows,
+                frows.append([name, r["season"], r["production_t"], r["production_lower"], r["production_upper"], r["yield_kg_ha"],
+                              r.get("status_label", "Forecast")])
+        _sheet_table(wb, "Forecast", ["Model", "Season", "Production (t)", "95% low", "95% high", "Yield (kg/ha)", "Status"], frows,
                      {"C": "#,##0", "D": "#,##0", "E": "#,##0", "F": "#,##0"})
         ev = cm["evaluation"]
         erows = []

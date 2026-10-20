@@ -8,7 +8,7 @@
   <div class="container">
     <div class="crumbs"><a href="{{ url_for('hathras') }}">Hathras</a> / <a href="{{ url_for('tools') }}">Tools</a> / Forecast</div>
     <h1>Harvest forecast</h1>
-    <p class="lead" style="max-width:720px">Where the trend puts {{ district.name }}'s potato crop in {{ rows[0].season }} and {{ rows[1].season }}, and how sure we can be.</p>
+    <p class="lead" style="max-width:720px">Where the trend puts {{ district.name }}'s potato crop in {{ rows[0].season }} and {{ rows[1].season }} ({{ forecast_word }}), and how sure we can be.</p>
     {{ m.estimate_note() }}
   </div>
 </section>
@@ -17,11 +17,11 @@
 
   <div class="grid grid-4">
     {% for r in rows %}
-    {{ m.kpi('Projected production · ' ~ r.season, '%.3f'|format(r.production_t / 1e6), 'M t', None, None,
+    {{ m.kpi(('Estimated' if r.status == 'estimate' else 'Projected') ~ ' production · ' ~ r.season, '%.3f'|format(r.production_t / 1e6), 'M t', None, None,
              '95% range ' ~ (r.production_lower|tonnes) ~ ' – ' ~ (r.production_upper|tonnes)) }}
     {% endfor %}
     {% for r in rows %}
-    {{ m.kpi('Projected yield · ' ~ r.season, '%.2f'|format(r.yield_kg_ha / 1000), 't/ha', None, None,
+    {{ m.kpi(('Estimated' if r.status == 'estimate' else 'Projected') ~ ' yield · ' ~ r.season, '%.2f'|format(r.yield_kg_ha / 1000), 't/ha', None, None,
              'Area ~' ~ (r.area_ha|num) ~ ' ha') }}
     {% endfor %}
   </div>
@@ -44,7 +44,7 @@
       <div class="card-body">
         <ul class="legend">
           <li><span class="sw" style="--c:var(--series-1)"></span>Actual</li>
-          <li><span class="sw dash" style="--c:var(--series-1)"></span><span data-bind="model-legend">Linear-trend forecast</span></li>
+          <li><span class="sw dash" style="--c:var(--series-1)"></span><span data-bind="model-legend">Linear-trend {{ forecast_word }}</span></li>
           <li><span class="sw band" style="--c:var(--band-1)"></span>95% prediction interval</li>
         </ul>
         <div class="chart-box tall"><canvas id="forecast-chart" aria-label="Actual and forecast values by season"></canvas></div>
@@ -66,14 +66,14 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><div><h3>Forecast table</h3><p>Point estimate and 95% interval</p></div></div>
+        <div class="card-head"><div><h3>{{ forecast_word|capitalize }} table</h3><p>Point estimate and 95% interval</p></div></div>
         <div class="table-wrap">
           <table class="table">
             <thead><tr><th>Season</th><th class="r">Production</th><th class="r">Yield</th></tr></thead>
             <tbody>
               {% for r in rows %}
               <tr>
-                <td><strong>{{ r.season }}</strong></td>
+                <td><strong>{{ r.season }}</strong><br><span class="xs muted">{{ r.status_label }}</span></td>
                 <td class="r">{{ r.production_t|num }} t<br><span class="xs muted">{{ r.production_lower|tonnes }} – {{ r.production_upper|tonnes }}</span></td>
                 <td class="r">{{ r.yield_kg_ha|num }} kg/ha<br><span class="xs muted">{{ r.yield_lower|num }} – {{ r.yield_upper|num }}</span></td>
               </tr>
@@ -97,8 +97,9 @@
   (function () {
     var d = HP.pageData();
     var metric = 'production', model = 'linear';
-    var desc = { linear: ['OLS linear trend on season index', 'Linear-trend forecast'],
-                 smoothing: ['Damped exponential smoothing (Holt), approximate interval', 'Smoothing forecast'] };
+    var word = {{ forecast_word|tojson }};
+    var desc = { linear: ['OLS linear trend on season index', 'Linear-trend ' + word],
+                 smoothing: ['Damped exponential smoothing (Holt), approximate interval', 'Smoothing ' + word] };
     var rows = function () { return model === 'linear' ? d.forecast.rows : d.smoothing.rows; };
     var c = HP.chart('forecast-chart', function () { return HP.forecastConfig(d.series, rows(), metric); });
     HP.segmented('fc', function (v) { metric = v; c.rebuild(); });

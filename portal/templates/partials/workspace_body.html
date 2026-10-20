@@ -8,7 +8,7 @@
     {{ m.kpi('Unserved demand', sim.total_overflow_t|tonnes, None, None, None, 'produce looking for space') }}
   {% elif ws.role == 'fpo' %}
     {{ m.kpi('Book space before', ws.book_before or '—', None, None, None, 'when district storage passes the watch level') }}
-    {{ m.kpi('Next harvest forecast', ws.next_forecast.production_t|tonnes, None, None, None, ws.next_forecast.season ~ ' · linear trend, 95% range ' ~ (ws.next_forecast.production_lower|tonnes) ~ '–' ~ (ws.next_forecast.production_upper|tonnes)) }}
+    {{ m.kpi('Harvest estimate (past season)' if ws.next_forecast.status == 'estimate' else 'Next harvest forecast', ws.next_forecast.production_t|tonnes, None, None, None, ws.next_forecast.season ~ ' · linear trend, 95% range ' ~ (ws.next_forecast.production_lower|tonnes) ~ '–' ~ (ws.next_forecast.production_upper|tonnes)) }}
     {{ m.kpi('5-year average harvest', ws.five_year_avg_t|tonnes, None, None, None, 'for comparison') }}
     {{ m.kpi('Without cold storage', sim.total_overflow_t|tonnes, None, None, None, 'risk of distress sales') }}
   {% else %}

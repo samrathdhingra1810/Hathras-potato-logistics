@@ -32,14 +32,14 @@
       </div>
       <ul class="legend">
         <li><span class="sw" style="--c:var(--series-1)"></span>Actual</li>
-        <li><span class="sw dash" style="--c:var(--series-1)"></span>Forecast</li>
+        <li><span class="sw dash" style="--c:var(--series-1)"></span>{{ forecast_word|capitalize }}</li>
         <li><span class="sw band" style="--c:var(--band-1)"></span>95% interval</li>
       </ul>
       <div class="chart-box short"><canvas id="hero-chart" aria-label="Production by season with forecast"></canvas></div>
       <dl class="mini-stats" style="margin:14px 0 0">
         <div><dt>YoY growth</dt><dd class="{{ 'up' if latest.production_yoy > 0 else 'down' }}">{{ latest.production_yoy|pct(2, True) }}</dd></div>
         <div><dt>Storage demand</dt><dd>{{ scenario.demand_t|tonnes }}</dd></div>
-        <div><dt>{{ forecast.rows[0].season }} forecast</dt><dd>{{ forecast.rows[0].production_t|tonnes }}</dd></div>
+        <div><dt>{{ forecast.rows[0].season }} {{ forecast.rows[0].status }}</dt><dd>{{ forecast.rows[0].production_t|tonnes }}</dd></div>
       </dl>
     </div>
   </div>
@@ -102,7 +102,7 @@
       {% endif %}
       <ul class="check-list">
         <li>Adjust district capacity, storage share and alert threshold</li>
-        <li>Compare this season with the {{ forecast_seasons|join(' and ') }} forecasts</li>
+        <li>Compare this season with the {{ forecast_seasons|join(' and ') }} {{ forecast_word }}</li>
         <li>See how much of regional demand your own facility covers</li>
       </ul>
       {{ m.estimate_note() }}
@@ -119,7 +119,7 @@
     </div>
     <div class="steps">
       <div class="card"><h3>Start from the district record</h3><p>Area, production and yield for every season from 2018-19 to 2023-24.</p></div>
-      <div class="card"><h3>Project the seasons after the record</h3><p>A linear trend gives the expected {{ forecast_seasons|join(' and ') }} crop, with an honest uncertainty band.</p></div>
+      <div class="card"><h3>Project the seasons after the record</h3><p>A linear trend gives {{ forecast_word }} for the {{ forecast_seasons|join(' and ') }} crop, with an honest uncertainty band.</p></div>
       <div class="card"><h3>Match demand to capacity</h3><p>A month-by-month model loads the crop into cold storage and releases it through the year.</p></div>
       <div class="card"><h3>Act on the gaps</h3><p>Deficit months and strained blocks are flagged, so you can plan space, transport or sales early.</p></div>
     </div>

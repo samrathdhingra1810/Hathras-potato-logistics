@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+from datetime import date
 
 # Two-sided Student-t critical values at 95% for small samples (df -> t).
 _T95 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228}
@@ -90,6 +91,20 @@ def harvested_seasons(seasons: list[str], today) -> list[str]:
     return [s for s in seasons if (today.year, today.month) >= (int(s[:4]) + 1, 5)]
 
 
+ESTIMATE_LABEL = "Estimate · past season, pending verified actuals"
+FORECAST_LABEL = "Forecast"
+
+
+def season_status(season: str, today: date | None = None) -> dict:
+    """How to label a modelled (non-actual) season. Labels only; the numbers are untouched.
+
+    'estimate' = the season's harvest is already over but no verified actual is in the
+    series, so the model value stands in for it. 'forecast' = the harvest is still ahead.
+    """
+    past = bool(harvested_seasons([season], today or date.today()))
+    return {"status": "estimate" if past else "forecast", "status_label": ESTIMATE_LABEL if past else FORECAST_LABEL}
+
+
 def forecast_series(series: list[dict], horizon: int = 2) -> dict:
     """Independent linear trend per metric against the season index."""
     xs = list(range(len(series)))
@@ -104,6 +119,7 @@ def forecast_series(series: list[dict], horizon: int = 2) -> dict:
         rows.append({
             "season": next_season(last["season"], k),
             "forecast": True,
+            **season_status(next_season(last["season"], k)),
             "area_ha": a["value"],
             "production_t": p["value"],
             "production_lower": p["lower"],
@@ -185,6 +201,7 @@ def forecast_smoothing(series: list[dict], horizon: int = 2) -> dict:
         a, p, y = fits["area_ha"]["rows"][k], fits["production_t"]["rows"][k], fits["yield_kg_ha"]["rows"][k]
         rows.append({
             "season": next_season(last["season"], k + 1), "forecast": True,
+            **season_status(next_season(last["season"], k + 1)),
             "area_ha": a["value"], "production_t": p["value"],
             "production_lower": p["lower"], "production_upper": p["upper"],
             "yield_kg_ha": y["value"], "yield_lower": y["lower"], "yield_upper": y["upper"],

@@ -21,7 +21,7 @@
       <h3>{{ t.name }}</h3>
       <p>{{ t.blurb }}</p>
       {% if t.slug == 'forecast' %}
-      <p class="small" style="margin-top:12px"><strong class="tabular">{{ forecast.rows[0].season }}: {{ forecast.rows[0].production_t|tonnes }}</strong> · {{ forecast.rows[1].season }}: {{ forecast.rows[1].production_t|tonnes }}</p>
+      <p class="small" style="margin-top:12px"><strong class="tabular">{{ forecast.rows[0].season }}: {{ forecast.rows[0].production_t|tonnes }}</strong> · {{ forecast.rows[1].season }}: {{ forecast.rows[1].production_t|tonnes }} <span class="muted">({{ forecast_word }})</span></p>
       {% elif t.slug == 'planner' %}
       <p style="margin-top:12px">{{ m.badge(sim.status, 'Peak ' ~ (sim.peak_utilisation|pct(0)) ~ ' in ' ~ sim.peak_month) }}</p>
       {% elif t.slug == 'map' %}

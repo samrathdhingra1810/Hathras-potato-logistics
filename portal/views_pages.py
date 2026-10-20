@@ -164,6 +164,6 @@ def home_chips(scenario: dict, forecast: dict) -> list[dict]:
         gap("sadabad"), gap("sikandra-rao"), full("sasni"),
         {"icon": "🌾", "text": f"{month_name} harvest peak", "tone": "neutral"},
         gap("mursan"), full("hathras"),
-        {"icon": "📈", "text": f"{nxt['season']}: {nxt['production_t'] / 1e6:.2f}M T forecast", "tone": "neutral"},
+        {"icon": "📈", "text": f"{nxt['season']}: {nxt['production_t'] / 1e6:.2f}M T {nxt['status']}", "tone": "neutral"},
         {"icon": "❄️", "text": f"Peak strain {sim['peak_utilisation'] * 100:.0f}% in {sim['peak_month']}", "tone": "bad" if sim["peak_utilisation"] > 1 else "warn"},
     ]

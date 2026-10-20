@@ -10,7 +10,7 @@ from flask import Flask, jsonify, render_template, request
 
 from . import db, security, views_api, views_auth, views_pages
 from .core import dataset as ds
-from .core.analytics import forecast_seasons, harvested_seasons, summary
+from .core.analytics import forecast_seasons, season_status, summary
 from .formatting import FILTERS
 
 TOOLS = [
@@ -23,6 +23,17 @@ TOOLS = [
     {"slug": "map", "endpoint": "tool_map", "name": "Block strain map",
      "blurb": "See which development blocks are short of storage at harvest peak."},
 ]
+
+
+def _estimates() -> list[str]:
+    """Hathras modelled seasons whose harvest is already over (labelled as estimates)."""
+    return [s for s in forecast_seasons(ds.PRODUCTION_SERIES) if season_status(s)["status"] == "estimate"]
+
+
+def _forecast_word() -> str:
+    """Plural noun for the modelled Hathras seasons: 'estimates', 'forecasts' or both."""
+    n_est, n = len(_estimates()), len(forecast_seasons(ds.PRODUCTION_SERIES))
+    return "estimates" if n_est == n else "forecasts" if n_est == 0 else "estimates and forecasts"
 
 
 def create_app(test_config: dict | None = None) -> Flask:
@@ -72,7 +83,8 @@ def create_app(test_config: dict | None = None) -> Flask:
             "tools": TOOLS,
             "headline": summary(ds.PRODUCTION_SERIES),
             "forecast_seasons": forecast_seasons(ds.PRODUCTION_SERIES),
-            "harvested_forecasts": harvested_seasons(forecast_seasons(ds.PRODUCTION_SERIES), date.today()),
+            "harvested_forecasts": _estimates(),
+            "forecast_word": _forecast_word(),
             "year": date.today().year,
             "accounts_enabled": db.accounts_enabled(),
         }
