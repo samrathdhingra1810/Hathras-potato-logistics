@@ -112,3 +112,27 @@
     if (window.HP && HP.resizeAll) HP.resizeAll();
   });
 })();
+
+// Language switch (EN | हिंदी). The page already holds both strings; this only changes which
+// one shows, so there is no reload. The <head> script applies the saved choice before paint.
+(function () {
+  var root = document.documentElement;
+  function current() { return root.getAttribute('data-lang') === 'hi' ? 'hi' : 'en'; }
+  function apply(lang) {
+    if (lang === 'hi') root.setAttribute('data-lang', 'hi'); else root.removeAttribute('data-lang');
+    root.lang = lang;
+    document.querySelectorAll('[data-set-lang]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.setLang === lang)); });
+  }
+  apply(current());
+  document.querySelectorAll('[data-set-lang]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var lang = b.dataset.setLang;
+      if (lang === current()) return;
+      apply(lang);
+      try { localStorage.setItem('cf-lang', lang); localStorage.removeItem('cf-hindi'); } catch (e) {}
+      document.dispatchEvent(new CustomEvent('cf:lang', { detail: { lang: lang } }));
+    });
+  });
+  window.CF = window.CF || {};
+  window.CF.lang = current;
+})();

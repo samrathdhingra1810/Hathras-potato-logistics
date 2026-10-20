@@ -8,7 +8,7 @@ from datetime import date, timedelta
 
 from flask import Flask, jsonify, render_template, request
 
-from . import db, security, views_api, views_auth, views_pages
+from . import db, i18n, security, views_api, views_auth, views_pages
 from .core import dataset as ds
 from .core.analytics import forecast_seasons, season_status, summary
 from .formatting import FILTERS
@@ -85,6 +85,9 @@ def create_app(test_config: dict | None = None) -> Flask:
             "forecast_seasons": forecast_seasons(ds.PRODUCTION_SERIES),
             "harvested_forecasts": _estimates(),
             "forecast_word": _forecast_word(),
+            "block_aliases": i18n.block_aliases(ds.BLOCKS),
+            "BLOCK_HI": i18n.BLOCK_HI, "MONTH_HI": i18n.MONTH_HI, "MONTH_EN": i18n.MONTH_EN,
+            "spoken_t": i18n.spoken_tonnes,
             "year": date.today().year,
             "accounts_enabled": db.accounts_enabled(),
         }

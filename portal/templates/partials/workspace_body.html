@@ -1,28 +1,29 @@
 {# Role workspace content. Needs `ws` from roles.workspace_data() and macros `m`. #}
 {% set sc = ws.scenario %}{% set sim = sc.simulation %}{% set econ = sc.economics %}
 {% import "partials/field_view.html" as fv with context %}
+{% from "partials/i18n.html" import t %}
 {% if ws.role == 'fpo' %}
   {{ fv.action_view() }}
   {{ fv.block_cards() }}
 {% elif ws.role == 'owner' %}
   <section class="fv-cards" aria-label="Your season at a glance">
     <article class="fv-act {{ 'fv-red' if sim.peak_utilisation > 1 else 'fv-yellow' if sim.peak_utilisation >= sc.inputs.threshold else 'fv-green' }}">
-      <h2>District stores at peak<span class="hi" lang="hi">पीक पर ज़िले के स्टोर</span></h2>
+      <h2>{{ t('District stores at peak', 'पीक पर ज़िले के स्टोर') }}</h2>
       <p class="fv-big">{{ sim.peak_utilisation|pct(0) }} full</p>
-      <p class="fv-line">in {{ fv.EN_MONTH[sim.peak_month] }}, {{ sc.inputs.season }} harvest</p>
+      <p class="fv-line">{{ t('in ' ~ MONTH_EN[sim.peak_month] ~ ', ' ~ sc.inputs.season ~ ' harvest', MONTH_HI[sim.peak_month] ~ ' में, ' ~ sc.inputs.season ~ ' की फ़सल') }}</p>
     </article>
     <article class="fv-act">
-      <h2>Produce looking for space<span class="hi" lang="hi">जगह ढूँढ रहा माल</span></h2>
+      <h2>{{ t('Produce looking for space', 'जगह ढूँढ रहा माल') }}</h2>
       <p class="fv-big">{{ sim.total_overflow_t|tonnes }}</p>
       <p class="fv-line">potential customers with nowhere to store</p>
     </article>
     <article class="fv-act">
-      <h2>Power cost per tonne<span class="hi" lang="hi">प्रति टन बिजली लागत</span></h2>
+      <h2>{{ t('Power cost per tonne', 'प्रति टन बिजली लागत') }}</h2>
       <p class="fv-big">₹{{ econ.cost_per_t_stored_rs|num }}</p>
       <p class="fv-line">for the season, at ₹{{ econ.rate_rs_kwh }}/kWh (placeholder)</p>
     </article>
     <article class="fv-act">
-      <h2>District power bill<span class="hi" lang="hi">ज़िले का बिजली बिल</span></h2>
+      <h2>{{ t('District power bill', 'ज़िले का बिजली बिल') }}</h2>
       <p class="fv-big">₹{{ '%.1f'|format(econ.season_cost_rs / 1e7) }} crore</p>
       <p class="fv-line">all stores, whole season (placeholder tariff)</p>
     </article>
@@ -33,7 +34,7 @@
 
 {% if ws.role != 'admin' %}
 <details class="advanced" data-advanced>
-  <summary>Advanced Data &amp; Methodology<span class="hi" lang="hi">विस्तृत आँकड़े और पद्धति</span></summary>
+  <summary>{{ t('Advanced Data & Methodology', 'विस्तृत आँकड़े और पद्धति') }}</summary>
   <div class="advanced-body">
 {% endif %}
 <div class="grid grid-4">

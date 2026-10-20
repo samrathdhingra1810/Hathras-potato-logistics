@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "macros.html" as m with context %}
+{% from "partials/i18n.html" import t %}
 {% block title %}Plan with your data · ColdFlow{% endblock %}
 {% block description %}Enter seasons for any district or cold store and get a harvest forecast, storage outlook and deficit alerts.{% endblock %}
 
@@ -9,9 +10,8 @@
   <div class="container plan-banner">
     <div style="min-width:0;flex:1">
       <div class="crumbs">{% if g.user %}<a href="{{ url_for('dashboard') }}">Dashboard</a> / {% endif %}Plan your data</div>
-      <h1>Plan with your own data</h1>
+      <h1>{{ t('Plan with your own data', 'अपने आँकड़ों से योजना बनाएँ') }}</h1>
       <p class="lead" style="margin:0;max-width:720px">Enter a few seasons for any district or cold store. ColdFlow forecasts the next two harvests and checks them against your storage capacity month by month.</p>
-      <p class="no-print" style="margin:14px 0 0"><button class="btn btn-ghost lang-toggle" type="button" data-hindi-toggle aria-pressed="false"><span lang="hi">हिंदी</span>&nbsp;subtitles</button></p>
     </div>
   </div>
 </section>
@@ -20,29 +20,29 @@
   <p class="print-only small">ColdFlow report · <span data-bind="name"></span> · <span data-print-date></span></p>
   <div class="card card-body plan-banner no-print">
     <div class="form-field" style="margin:0;flex:1;min-width:220px;max-width:420px">
-      <label for="plan-name">Plan name</label>
+      <label for="plan-name">{{ t('Plan name', 'योजना का नाम') }}</label>
       <input class="input-text" id="plan-name" maxlength="80" placeholder="e.g. Agra district 2025">
     </div>
     <div class="form-field" style="margin:0;min-width:200px">
-      <label for="district">Start from a district</label>
+      <label for="district">{{ t('Start from a district', 'किसी ज़िले से शुरू करें') }}</label>
       <select class="input" id="district">
-        <option value="">Choose…</option>
+        <option value="">Choose… / चुनें…</option>
         {% for dd in districts.loaded %}<option value="{{ dd.id }}">{{ dd.name }}, {{ dd.state }}</option>{% endfor %}
         {% for c in districts.candidates %}<option value="" disabled>{{ c }} (data not loaded yet)</option>{% endfor %}
       </select>
     </div>
     <div class="toolbar">
-      <button class="btn btn-ghost btn-sm" type="button" id="load-example">Load Hathras example</button>
-      <label class="btn btn-ghost btn-sm" for="csv-file" style="cursor:pointer">Import CSV / Excel</label>
+      <button class="btn btn-ghost btn-sm" type="button" id="load-example">{{ t('Load Hathras example', 'हाथरस का उदाहरण लोड करें') }}</button>
+      <label class="btn btn-ghost btn-sm" for="csv-file" style="cursor:pointer">{{ t('Import CSV / Excel', 'CSV / Excel अपलोड करें') }}</label>
       <input type="file" id="csv-file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="sr-only">
-      <button class="btn btn-ghost btn-sm" type="button" id="download-csv">Download CSV</button>
+      <button class="btn btn-ghost btn-sm" type="button" id="download-csv">{{ t('Download CSV', 'CSV डाउनलोड करें') }}</button>
       <button class="btn btn-ghost btn-sm" type="button" id="share">Copy share link</button>
-      <button class="btn btn-ghost btn-sm" type="button" data-print>⇩ Report (PDF)</button>
-      <button class="btn btn-ghost btn-sm" type="button" id="export-xlsx">⇩ Excel report</button>
+      <button class="btn btn-ghost btn-sm" type="button" data-print>⇩ {{ t('Report (PDF)', 'रिपोर्ट (PDF)') }}</button>
+      <button class="btn btn-ghost btn-sm" type="button" id="export-xlsx">⇩ {{ t('Excel report', 'Excel रिपोर्ट') }}</button>
       {% if accounts and g.user %}
-        <button class="btn btn-primary btn-sm" type="button" id="save">Save plan</button>
+        <button class="btn btn-primary btn-sm" type="button" id="save">{{ t('Save plan', 'योजना सहेजें') }}</button>
       {% elif accounts %}
-        <a class="btn btn-primary btn-sm" href="{{ url_for('login', next=url_for('plan')) }}" id="login-to-save">Log in to save</a>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('login', next=url_for('plan')) }}" id="login-to-save">{{ t('Log in to save', 'सहेजने के लिए लॉग इन करें') }}</a>
       {% endif %}
     </div>
     <span class="save-status" id="save-status" aria-live="polite">{% if saved %}Saved {{ saved.updated_at[:16]|replace('T', ' ') }} UTC{% endif %}</span>
@@ -51,7 +51,7 @@
   <div class="split split-plan">
     <div class="stack no-print">
       <div class="card">
-        <div class="card-head"><div><h2>Your seasons<span class="hi" lang="hi">आपके सीज़न</span></h2><p>Area in hectares, production in tonnes. At least 3 consecutive seasons.</p></div></div>
+        <div class="card-head"><div><h2>{{ t('Your seasons', 'आपके सीज़न') }}</h2><p>{{ t('Area in hectares, production in tonnes. At least 3 consecutive seasons.', 'रकबा हेक्टेयर में, उत्पादन टन में। कम से कम 3 लगातार सीज़न।') }}</p></div></div>
         <div class="table-wrap">
           <table class="table data-table">
             <thead><tr><th>Season</th><th class="r">Area (ha)</th><th class="r">Production (t)</th><th class="r">Yield</th><th><span class="sr-only">Remove</span></th></tr></thead>
@@ -59,38 +59,38 @@
           </table>
         </div>
         <div class="card-body toolbar" style="border-top:1px solid var(--line)">
-          <button class="btn btn-ghost btn-sm" type="button" id="add-row">+ Add season</button>
-          <button class="btn btn-ghost btn-sm" type="button" id="clear-rows">Clear</button>
+          <button class="btn btn-ghost btn-sm" type="button" id="add-row">+ {{ t('Add season', 'सीज़न जोड़ें') }}</button>
+          <button class="btn btn-ghost btn-sm" type="button" id="clear-rows">{{ t('Clear', 'साफ़ करें') }}</button>
         </div>
         <p class="xs muted" style="padding:0 20px 14px;margin:0">Columns: <code>season, area_ha, production_t</code>. Templates: <a href="{{ url_for('template_xlsx') }}">Excel</a> · <a href="{{ url_for('template_csv') }}">CSV</a> (the Excel template also carries your storage settings).</p>
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h2>Storage settings<span class="hi" lang="hi">भंडारण सेटिंग (भंडारण क्षमता)</span></h2><p>For your district or facility</p></div></div>
+        <div class="card-head"><div><h2>{{ t('Storage settings', 'भंडारण सेटिंग') }}</h2><p>{{ t('For your district or facility', 'आपके ज़िले या स्टोर के लिए') }}</p></div></div>
         <div class="card-body">
           <div class="form-field">
-            <label for="capacity">Cold storage capacity (t)</label>
+            <label for="capacity">{{ t('Storage capacity (t)', 'भंडारण क्षमता (टन)') }}</label>
             <input class="num-input" id="capacity" type="number" min="1" step="1000" inputmode="numeric">
           </div>
           <div class="field">
-            <div class="field-top"><label for="ratio">Share of harvest stored</label><output data-out="ratio"></output></div>
+            <div class="field-top"><label for="ratio">{{ t('Share of harvest stored', 'फ़सल का कितना हिस्सा स्टोर होगा') }}</label><output data-out="ratio"></output></div>
             <input type="range" id="ratio" min="0.05" max="1" step="0.01">
           </div>
           <div class="field">
-            <div class="field-top"><label for="threshold">Alert threshold</label><output data-out="threshold"></output></div>
+            <div class="field-top"><label for="threshold">{{ t('Alert threshold', 'चेतावनी सीमा') }}</label><output data-out="threshold"></output></div>
             <input type="range" id="threshold" min="0.5" max="1" step="0.01">
           </div>
           <div class="form-field" style="margin:0">
-            <label for="facility">One facility's capacity (t) <span class="opt">for coverage</span></label>
+            <label for="facility">{{ t("One facility's capacity (t)", 'एक स्टोर की क्षमता (टन)') }} <span class="opt">{{ t('for coverage', 'कवरेज के लिए') }}</span></label>
             <input class="num-input" id="facility" type="number" min="1" step="500" inputmode="numeric">
           </div>
         </div>
         <details class="panel">
-          <summary>What-if &amp; holding costs</summary>
+          <summary>{{ t('What-if & holding costs', 'अगर ऐसा हो तो & भंडारण लागत') }}</summary>
           <div>{% with w = {'yield_shock': 0, 'extra_capacity': 0, 'tariff_change': 0, 'tariff': 7.5, 'kwh': 9}, extra_max = 500000, extra_step = 1000 %}{% include "partials/whatif.html" %}{% endwith %}</div>
         </details>
         <details class="panel" id="calendar">
-          <summary>Harvest calendar</summary>
+          <summary>{{ t('Harvest calendar', 'फ़सल कैलेंडर') }}</summary>
           <div>
             <p class="small muted">Share of the season's storage intake loaded each month, and share released each month. Percentages; each row is scaled to 100%.</p>
             <p class="small" style="margin:12px 0 6px"><strong>Loading into storage</strong></p>
@@ -124,17 +124,17 @@
 
         <div class="alert lvl-good" id="alert"><i aria-hidden="true" data-bind="alert-icon">●</i><div><strong data-bind="alert-title"></strong><p data-bind="alert-body"></p></div></div>
 
-        <div class="need"><span>Capacity needed:</span><strong class="tabular" data-bind="need"></strong><span>to avoid any deficit ·</span><strong class="tabular" data-bind="need-thr"></strong><span>to stay under your threshold</span></div>
+        <div class="need"><span>{{ t('Capacity needed:', 'ज़रूरी क्षमता:') }}</span><strong class="tabular" data-bind="need"></strong><span>{{ t('to avoid any deficit ·', 'कोई कमी न हो इसके लिए ·') }}</span><strong class="tabular" data-bind="need-thr"></strong><span>{{ t('to stay under your threshold', 'चेतावनी सीमा से नीचे रहने के लिए') }}</span></div>
 
         <dl class="mini-stats" style="margin:0">
-          <div><dt>Harvest in outlook</dt><dd data-bind="production"></dd><dd data-bind="season-label"></dd></div>
-          <div><dt>Storage demand</dt><dd data-bind="demand"></dd><dd data-bind="ratio-label"></dd></div>
-          <div><dt>Capacity coverage</dt><dd data-bind="coverage"></dd><dd data-bind="gap"></dd></div>
-          <div><dt>One facility covers</dt><dd data-bind="facility-cov"></dd><dd>of storage demand</dd></div>
+          <div><dt>{{ t('Harvest in outlook', 'अनुमानित फ़सल') }}</dt><dd data-bind="production"></dd><dd data-bind="season-label"></dd></div>
+          <div><dt>{{ t('Storage demand', 'भंडारण की माँग') }}</dt><dd data-bind="demand"></dd><dd data-bind="ratio-label"></dd></div>
+          <div><dt>{{ t('Available storage vs demand', 'उपलब्ध भंडारण बनाम माँग') }}</dt><dd data-bind="coverage"></dd><dd data-bind="gap"></dd></div>
+          <div><dt>{{ t('One facility covers', 'एक स्टोर कितना संभालता है') }}</dt><dd data-bind="facility-cov"></dd><dd>of storage demand</dd></div>
         </dl>
 
         <details class="advanced" data-advanced>
-          <summary>Advanced Data &amp; Methodology<span class="hi" lang="hi">विस्तृत आँकड़े और पद्धति</span></summary>
+          <summary>{{ t('Advanced Data & Methodology', 'विस्तृत आँकड़े और पद्धति') }}</summary>
           <div class="advanced-body stack">
             <dl class="mini-stats" style="margin:0">
               <div><dt>Latest harvest</dt><dd data-bind="latest"></dd><dd data-bind="latest-season"></dd></div>

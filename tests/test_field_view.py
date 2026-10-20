@@ -21,7 +21,7 @@ class FieldViewTests(unittest.TestCase):
     def test_fpo_three_second_view_comes_first(self):
         html = self.page("/workspace/fpo")
         order = [html.index(t) for t in ("Storage space near you", "Expected peak filling", "Contact a storage facility",
-                                         "Advanced Data &amp; Methodology")]
+                                         "Advanced Data &amp; Methodology")]  # English strings render alongside Hindi
         self.assertEqual(order, sorted(order))
         # Dense content is inside the collapsed advanced section, not above it.
         adv = html.index("data-advanced")
@@ -52,11 +52,12 @@ class FieldViewTests(unittest.TestCase):
         months = {"Feb": "February", "Mar": "March", "Apr": "April"}
         self.assertIsNotNone(ws["book_before"])
         self.assertIn("Book space before <strong>%s</strong>" % months[ws["book_before"]], html)
+        self.assertIn("से पहले स्थान आरक्षित करें", html)
 
     def test_contacts_are_not_invented(self):
         self.assertEqual(roles.FACILITY_CONTACTS, [])
         html = self.page("/workspace/fpo")
-        self.assertIn("doesn't have a verified cold storage phone directory yet", html)
+        self.assertIn("have a verified cold storage phone directory yet", html)
         self.assertNotIn('href="tel:', html)
 
     def test_contacts_render_when_supplied(self):
@@ -67,9 +68,9 @@ class FieldViewTests(unittest.TestCase):
 
     def test_owner_overflow_alerts_in_plain_numbers(self):
         html = self.page("/workspace/owner")
-        self.assertIn("Sadabad: +12.2k t</strong> expected overflow", html)
+        self.assertIn('<span class="t-en">Sadabad</span><span class="t-hi" lang="hi">सादाबाद</span>: +12.2k t</strong>', html)
         shorts = [b for b in hathras_scenario({})["blocks"] if b["gap_t"] < 0]
-        self.assertEqual(html.count("expected overflow <span"), len(shorts))
+        self.assertEqual(html.count('<span class="t-en">expected overflow</span>'), len(shorts))
         for t in ("District stores at peak", "Produce looking for space", "Power cost per tonne", "District power bill"):
             self.assertIn(t, html)
 
@@ -83,13 +84,13 @@ class FieldViewTests(unittest.TestCase):
     def test_estimate_badge_stays_prominent(self):
         html = self.page("/workspace/fpo")
         self.assertIn('<span class="est-tag">ESTIMATED (Pending Actuals)</span>', html)
-        self.assertIn('class="rec-tag">Verified actual', html)
+        self.assertIn('class="rec-tag"><span class="t-en">Verified actual</span>', html)
 
     def test_hindi_subtitles_available(self):
         for path in ("/workspace/fpo", "/workspace/owner", "/plan"):
             html = self.page(path)
-            self.assertIn("data-hindi-toggle", html)
-            self.assertIn('lang="hi"', html)
+            self.assertIn("data-set-lang=\"hi\"", html)       # header switch
+            self.assertIn('class="t-hi" lang="hi"', html)
         self.assertIn("भंडारण क्षमता", self.page("/plan"))
 
     def test_plan_progressive_disclosure(self):

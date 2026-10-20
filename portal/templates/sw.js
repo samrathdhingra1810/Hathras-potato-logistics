@@ -9,7 +9,7 @@ const V = '?v={{ version }}';
 const CORE = [
   '/', '/plan', '/hathras', '/tools/planner', '/tools/forecast', '/tools/map', '/workspace/fpo', '/offline',
   '/static/css/site.css' + V, '/static/css/home.css' + V, '/static/js/site.js' + V, '/static/js/charts.js' + V, '/static/js/assistant.js' + V,
-  '/static/js/palette.js' + V, '/static/js/planner.js' + V, '/static/js/plan.js' + V, '/static/js/map.js' + V, '/static/js/workspace.js' + V,
+  '/static/js/palette.js' + V, '/static/js/planner.js' + V, '/static/js/plan.js' + V, '/static/js/map.js' + V, '/static/js/workspace.js' + V, '/static/js/voice.js' + V,
   '/static/img/mark.svg' + V,
 ];
 

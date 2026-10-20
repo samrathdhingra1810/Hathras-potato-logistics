@@ -1,8 +1,9 @@
 {# Plain-language field view for farmers, FPOs and store owners. Needs `ws` from
    roles.workspace_data(). Display only: every figure comes from the scenario.
-   Hindi subtitles (lang="hi") show when the viewer turns on हिंदी. #}
-{% set HI_MONTH = {'Jan': 'जनवरी', 'Feb': 'फ़रवरी', 'Mar': 'मार्च', 'Apr': 'अप्रैल', 'May': 'मई', 'Jun': 'जून', 'Jul': 'जुलाई', 'Aug': 'अगस्त', 'Sep': 'सितंबर', 'Oct': 'अक्टूबर', 'Nov': 'नवंबर', 'Dec': 'दिसंबर'} %}
-{% set EN_MONTH = {'Jan': 'January', 'Feb': 'February', 'Mar': 'March', 'Apr': 'April', 'May': 'May', 'Jun': 'June', 'Jul': 'July', 'Aug': 'August', 'Sep': 'September', 'Oct': 'October', 'Nov': 'November', 'Dec': 'December'} %}
+   Labels render in English and Hindi (t macro); the header switch picks one.
+   Speaker buttons read the same figures aloud (static/js/voice.js). #}
+{% from "partials/i18n.html" import t %}
+{% from "partials/voice.html" import say, mic, voice_status %}
 {% set LIGHT_ICON = {'green': '●', 'yellow': '▲', 'red': '■'} %}
 
 {% macro pin() -%}<svg class="fv-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>{%- endmacro %}
@@ -10,11 +11,28 @@
 {% macro phone() -%}<svg class="fv-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1L6.6 10.8z"/></svg>{%- endmacro %}
 
 {% macro status(s) -%}
-<span class="fv-status fv-{{ s.light }}"><i aria-hidden="true">{{ LIGHT_ICON[s.light] }}</i>{{ s.label }}<span class="hi" lang="hi">{{ s.hi }}</span></span>
+<span class="fv-status fv-{{ s.light }}"><i aria-hidden="true">{{ LIGHT_ICON[s.light] }}</i>{{ t(s.label, s.hi) }}</span>
+{%- endmacro %}
+
+{% macro block_lines(s) -%}
+{%- set en_m = MONTH_EN[s.peak_month] %}{% set hi_m = MONTH_HI[s.peak_month] -%}
+{%- if s.spare_t > 0 -%}
+{{ t('About ' ~ (s.spare_t|tonnes) ~ ' of space left at the ' ~ en_m ~ ' peak.', hi_m ~ ' के पीक पर लगभग ' ~ spoken_t(s.spare_t) ~ ' टन जगह बाकी है।') }}
+{%- else -%}
+{{ t('Short by about ' ~ (s.short_t|tonnes) ~ ' at the ' ~ en_m ~ ' peak.' ~ ((' Nearest with space: ' ~ s.nearest[0].name ~ ', ' ~ s.nearest[0].km ~ ' km.') if s.nearest else ''),
+     hi_m ~ ' के पीक पर लगभग ' ~ spoken_t(s.short_t) ~ ' टन जगह कम है।' ~ ((' सबसे पास जगह: ' ~ BLOCK_HI[s.nearest[0].id] ~ ', ' ~ s.nearest[0].km ~ ' किमी।') if s.nearest else '')) }}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro block_speech_en(s) -%}
+{{ s.name }} block. {{ s.label }}. {% if s.spare_t > 0 %}About {{ spoken_t(s.spare_t) }} tonnes of space left at the {{ MONTH_EN[s.peak_month] }} peak.{% else %}Short by about {{ spoken_t(s.short_t) }} tonnes at the {{ MONTH_EN[s.peak_month] }} peak.{% if s.nearest %} Nearest block with space: {{ s.nearest[0].name }}, {{ s.nearest[0].km }} kilometres.{% endif %}{% endif %}
+{%- endmacro %}
+{% macro block_speech_hi(s) -%}
+{{ BLOCK_HI[s.id] }} ब्लॉक। {{ s.hi }}। {% if s.spare_t > 0 %}{{ MONTH_HI[s.peak_month] }} के पीक पर लगभग {{ spoken_t(s.spare_t) }} टन जगह बाकी है।{% else %}{{ MONTH_HI[s.peak_month] }} के पीक पर लगभग {{ spoken_t(s.short_t) }} टन जगह कम है।{% if s.nearest %} सबसे पास जगह वाला ब्लॉक: {{ BLOCK_HI[s.nearest[0].id] }}, {{ s.nearest[0].km }} किलोमीटर।{% endif %}{% endif %}
 {%- endmacro %}
 
 {% macro basis() -%}
-<p class="fv-basis">Based on the {{ ws.scenario.inputs.season }} harvest <span class="rec-tag">Verified actual</span> and the assumed district capacity of {{ ws.scenario.inputs.capacity|tonnes }}. Monthly model, so peaks are shown by month, not by day.</p>
+<p class="fv-basis">{{ t('Based on the ' ~ ws.scenario.inputs.season ~ ' harvest', ws.scenario.inputs.season ~ ' की फ़सल पर आधारित') }} <span class="rec-tag">{{ t('Verified actual', 'सत्यापित वास्तविक') }}</span> {{ t('and the assumed district capacity of ' ~ (ws.scenario.inputs.capacity|tonnes) ~ '. Monthly model, so peaks are shown by month, not by day.', 'और ज़िले की अनुमानित क्षमता ' ~ spoken_t(ws.scenario.inputs.capacity) ~ ' टन। मॉडल महीने के हिसाब से है, इसलिए पीक महीने में दिखाया गया है, दिन में नहीं।') }}</p>
 {%- endmacro %}
 
 {# ---- The three-second view: space near you, peak filling, contact ---- #}
@@ -22,51 +40,64 @@
 {% set first_spare = ws.space|selectattr('spare_t', 'gt', 0)|sort(attribute='spare_t', reverse=True)|first %}
 <section class="fv-actions" aria-label="At a glance" data-field-view data-space='{{ ws.space|tojson|forceescape }}' data-distances='{{ ws.distances|tojson|forceescape }}'>
   <article class="fv-tile">
-    <h2>{{ pin() }}<span>Storage space near you<span class="hi" lang="hi">आपके पास भंडारण की जगह</span></span></h2>
-    <label class="fv-label" for="fv-block">Your block <span class="hi" lang="hi">आपका ब्लॉक</span></label>
-    <select class="input fv-select" id="fv-block" data-fv-block>
-      {% for s in ws.space %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
-    </select>
+    <h2>{{ pin() }}<span>{{ t('Storage space near you', 'आपके पास भंडारण की जगह') }}</span></h2>
+    <label class="fv-label" for="fv-block">{{ t('Your block', 'आपका ब्लॉक') }}</label>
+    <div class="voice-field">
+      <select class="input fv-select" id="fv-block" data-fv-block>
+        {% for s in ws.space %}<option value="{{ s.id }}">{{ s.name }} · {{ BLOCK_HI[s.id] }}</option>{% endfor %}
+      </select>
+      {{ mic('#fv-block', 'choose your block') }}
+    </div>
+    {{ voice_status() }}
     <div aria-live="polite">
       {% for s in ws.space %}
       <div class="fv-mine" data-fv-mine="{{ s.id }}"{% if not loop.first %} hidden{% endif %}>
-        <p class="fv-big">{{ s.name }}: {{ status(s) }}</p>
-        <p class="fv-line">{% if s.spare_t > 0 %}About {{ s.spare_t|tonnes }} of space left at the {{ s.peak_month }} peak.<span class="hi" lang="hi">पीक पर लगभग {{ s.spare_t|tonnes }} जगह बाकी।</span>{% else %}Short by about {{ s.short_t|tonnes }} at the {{ s.peak_month }} peak.{% if s.nearest %} Nearest with space: {{ s.nearest[0].name }}, {{ s.nearest[0].km }} km.{% endif %}<span class="hi" lang="hi">पीक पर लगभग {{ s.short_t|tonnes }} जगह कम।</span>{% endif %}</p>
+        <div class="fv-say-row">
+          <p class="fv-big"><span>{{ t(s.name, BLOCK_HI[s.id]) }}:</span> {{ status(s) }}</p>
+          {{ say(block_speech_en(s), block_speech_hi(s), s.name ~ ' storage status') }}
+        </div>
+        <p class="fv-line">{{ block_lines(s) }}</p>
       </div>
       {% endfor %}
     </div>
-    <a class="btn btn-ghost fv-btn" href="#fv-blocks">See all {{ ws.space|length }} blocks <span class="hi" lang="hi">सभी ब्लॉक देखें</span></a>
+    <a class="btn btn-ghost fv-btn" href="#fv-blocks">{{ t('See all ' ~ ws.space|length ~ ' blocks', 'सभी ' ~ ws.space|length ~ ' ब्लॉक देखें') }}</a>
   </article>
 
   <article class="fv-tile">
-    <h2>{{ cal() }}<span>Expected peak filling<span class="hi" lang="hi">भंडारण सबसे ज़्यादा कब भरेगा</span></span></h2>
-    <p class="fv-big">{{ EN_MONTH[ws.peak_month] }}<span class="hi" lang="hi">{{ HI_MONTH[ws.peak_month] }}</span></p>
-    <p class="fv-line">District stores are fullest in {{ EN_MONTH[ws.peak_month] }}.{% if ws.book_before %} Book space before <strong>{{ EN_MONTH[ws.book_before] }}</strong>.<span class="hi" lang="hi">{{ HI_MONTH[ws.book_before] }} से पहले जगह बुक करें।</span>{% endif %}</p>
+    <div class="fv-say-row">
+      <h2>{{ cal() }}<span>{{ t('Expected peak filling', 'भंडारण सबसे ज़्यादा कब भरेगा') }}</span></h2>
+      {{ say('District cold stores are fullest in ' ~ MONTH_EN[ws.peak_month] ~ '.' ~ ((' Book space before ' ~ MONTH_EN[ws.book_before] ~ '.') if ws.book_before else ''),
+             'ज़िले के कोल्ड स्टोर ' ~ MONTH_HI[ws.peak_month] ~ ' में सबसे ज़्यादा भरे होते हैं।' ~ ((' ' ~ MONTH_HI[ws.book_before] ~ ' से पहले स्थान आरक्षित करें।') if ws.book_before else ''),
+             'the peak filling month') }}
+    </div>
+    <p class="fv-big">{{ t(MONTH_EN[ws.peak_month], MONTH_HI[ws.peak_month]) }}</p>
+    <p class="fv-line">{{ t('District stores are fullest in ' ~ MONTH_EN[ws.peak_month] ~ '.', 'ज़िले के स्टोर ' ~ MONTH_HI[ws.peak_month] ~ ' में सबसे ज़्यादा भरे होते हैं।') }}
+      {% if ws.book_before %}<span class="t-en">Book space before <strong>{{ MONTH_EN[ws.book_before] }}</strong>.</span><span class="t-hi" lang="hi"><strong>{{ MONTH_HI[ws.book_before] }}</strong> से पहले स्थान आरक्षित करें।</span>{% endif %}</p>
     <ol class="fv-months" aria-label="How full district cold storage is each month">
       {% for m in ws.months %}
-      <li class="fv-m lvl-{{ m.level }}{{ ' is-peak' if m.month == ws.peak_month }}{{ ' is-book' if m.month == ws.book_before }}" title="{{ EN_MONTH[m.month] }}: {{ m.utilisation|pct(0) }} full">
+      <li class="fv-m lvl-{{ m.level }}{{ ' is-peak' if m.month == ws.peak_month }}{{ ' is-book' if m.month == ws.book_before }}" title="{{ MONTH_EN[m.month] }}: {{ m.utilisation|pct(0) }} full">
         <span class="fv-bar" style="--h: {{ '%.0f'|format([m.utilisation, 1.2]|min / 1.2 * 100) }}%" aria-hidden="true"></span>
-        <span class="fv-mn">{{ m.month[0] }}</span>
-        <span class="sr-only">{{ EN_MONTH[m.month] }} {{ m.utilisation|pct(0) }} full{{ ', peak' if m.month == ws.peak_month }}</span>
+        <span class="fv-mn" aria-hidden="true">{{ t(m.month[0], MONTH_HI[m.month][0]) }}</span>
+        <span class="sr-only">{{ MONTH_EN[m.month] }} {{ m.utilisation|pct(0) }} full{{ ', peak' if m.month == ws.peak_month }}</span>
       </li>
       {% endfor %}
     </ol>
-    <p class="fv-key"><span class="fv-key-peak"></span>Peak month <span class="fv-key-book"></span>Book before</p>
+    <p class="fv-key"><span class="fv-key-peak"></span>{{ t('Peak month', 'पीक महीना') }} <span class="fv-key-book"></span>{{ t('Book before', 'इससे पहले बुक करें') }}</p>
   </article>
 
   <article class="fv-tile">
-    <h2>{{ phone() }}<span>Contact a storage facility<span class="hi" lang="hi">कोल्ड स्टोरेज से संपर्क करें</span></span></h2>
+    <h2>{{ phone() }}<span>{{ t('Contact a storage facility', 'कोल्ड स्टोरेज से संपर्क करें') }}</span></h2>
     {% if ws.contacts_available %}
     <div class="fv-contacts" data-fv-contacts></div>
     {% else %}
-    <p class="fv-line">ColdFlow doesn't have a verified cold storage phone directory yet, so it can't show call buttons. Start with the nearest block that has space:</p>
+    <p class="fv-line">{{ t("ColdFlow doesn't have a verified cold storage phone directory yet, so it can't show call buttons. Start with the nearest block that has space:", 'ColdFlow के पास अभी कोल्ड स्टोरेज के सत्यापित फ़ोन नंबर नहीं हैं, इसलिए कॉल बटन नहीं दिखते। जगह वाले सबसे पास के ब्लॉक से शुरू करें:') }}</p>
     {% endif %}
     {% if first_spare %}
-    <a class="btn btn-primary fv-btn" data-fv-directions href="https://www.google.com/maps/dir/?api=1&amp;destination={{ first_spare.lat }},{{ first_spare.lng }}" target="_blank" rel="noopener">Directions to <span data-fv-dest>{{ first_spare.name }}</span> block <span class="hi" lang="hi">रास्ता देखें</span></a>
+    <a class="btn btn-primary fv-btn" data-fv-directions href="https://www.google.com/maps/dir/?api=1&amp;destination={{ first_spare.lat }},{{ first_spare.lng }}" target="_blank" rel="noopener"><span class="t-en">Directions to <span data-fv-dest>{{ first_spare.name }}</span> block</span><span class="t-hi" lang="hi"><span data-fv-dest-hi>{{ BLOCK_HI[first_spare.id] }}</span> ब्लॉक का रास्ता देखें</span></a>
     {% endif %}
-    <a class="btn btn-ghost fv-btn" href="{{ url_for('tool_map') }}">Find stores with space on the map <span class="hi" lang="hi">नक्शे पर जगह देखें</span></a>
-    <button class="btn btn-ghost fv-btn" type="button" data-ask-ws="Which cold stores near my block still have space, and when should I book?">Ask ColdFlow <span class="hi" lang="hi">ColdFlow से पूछें</span></button>
-    <p class="fv-note">Directions go to the block headquarters (approximate location), not a specific store.</p>
+    <a class="btn btn-ghost fv-btn" href="{{ url_for('tool_map') }}">{{ t('Find stores with space on the map', 'नक्शे पर जगह वाले स्टोर देखें') }}</a>
+    <button class="btn btn-ghost fv-btn" type="button" data-ask-ws="Which cold stores near my block still have space, and when should I book?">{{ t('Ask ColdFlow', 'ColdFlow से पूछें') }}</button>
+    <p class="fv-note">{{ t('Directions go to the block headquarters (approximate location), not a specific store.', 'रास्ता ब्लॉक मुख्यालय (अनुमानित जगह) तक है, किसी खास स्टोर तक नहीं।') }}</p>
   </article>
 </section>
 {{ basis() }}
@@ -75,15 +106,18 @@
 {# ---- Every block as a status card ---- #}
 {% macro block_cards() %}
 <section id="fv-blocks" aria-labelledby="fv-blocks-h">
-  <h2 id="fv-blocks-h" class="fv-h">Space by block at peak<span class="hi" lang="hi">पीक पर हर ब्लॉक में जगह</span></h2>
+  <h2 id="fv-blocks-h" class="fv-h">{{ t('Space by block at peak', 'पीक पर हर ब्लॉक में जगह') }}</h2>
   <div class="fv-grid">
     {% for s in ws.space %}
     <article class="fv-card fv-{{ s.light }}" data-block="{{ s.id }}">
-      <h3>{{ pin() }}{{ s.name }}</h3>
+      <div class="fv-say-row">
+        <h3>{{ pin() }}{{ t(s.name, BLOCK_HI[s.id]) }}</h3>
+        {{ say(block_speech_en(s), block_speech_hi(s), s.name ~ ' storage status') }}
+      </div>
       <p>{{ status(s) }}</p>
-      <p class="fv-num">{% if s.spare_t > 0 %}{{ s.spare_t|tonnes }} free{% else %}{{ s.short_t|tonnes }} short{% endif %}<span class="fv-sub"> · {{ s.utilisation|pct(0) }} full in {{ EN_MONTH[s.peak_month] }}</span></p>
-      {% if s.short_t > 0 and s.nearest %}<p class="fv-sub">Nearest with space: {% for n in s.nearest %}{{ n.name }} ({{ n.km }} km){{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
-      {% for c in s.contacts %}<a class="btn btn-primary fv-btn" href="tel:{{ c.phone }}">{{ phone() }} Call {{ c.name }}</a>{% endfor %}
+      <p class="fv-num">{% if s.spare_t > 0 %}{{ t((s.spare_t|tonnes) ~ ' free', spoken_t(s.spare_t) ~ ' टन खाली') }}{% else %}{{ t((s.short_t|tonnes) ~ ' short', spoken_t(s.short_t) ~ ' टन कम') }}{% endif %}<span class="fv-sub"> · {{ t((s.utilisation|pct(0)) ~ ' full in ' ~ MONTH_EN[s.peak_month], MONTH_HI[s.peak_month] ~ ' में ' ~ (s.utilisation|pct(0)) ~ ' भरा') }}</span></p>
+      {% if s.short_t > 0 and s.nearest %}<p class="fv-sub">{{ t('Nearest with space: ', 'सबसे पास जगह: ') }}{% for n in s.nearest %}{{ t(n.name, BLOCK_HI[n.id]) }} ({{ n.km }} km){{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+      {% for c in s.contacts %}<a class="btn btn-primary fv-btn" href="tel:{{ c.phone }}">{{ phone() }} {{ t('Call ' ~ c.name, c.name ~ ' को कॉल करें') }}</a>{% endfor %}
     </article>
     {% endfor %}
   </div>
@@ -94,22 +128,22 @@
 {% macro overflow_alerts() %}
 <section aria-labelledby="fv-over-h" data-field-view data-space='{{ ws.space|tojson|forceescape }}' data-distances='{{ ws.distances|tojson|forceescape }}'>
   <div class="fv-row">
-    <h2 id="fv-over-h" class="fv-h">Overflow heading for nearby stores<span class="hi" lang="hi">आस-पास के ब्लॉकों से अतिरिक्त माल</span></h2>
+    <h2 id="fv-over-h" class="fv-h">{{ t('Overflow heading for nearby stores', 'आस-पास के ब्लॉकों से अतिरिक्त माल') }}</h2>
     <div class="fv-inline">
-      <label class="fv-label" for="fv-block-owner">Your store is in</label>
+      <label class="fv-label" for="fv-block-owner">{{ t('Your store is in', 'आपका स्टोर किस ब्लॉक में है') }}</label>
       <select class="input fv-select" id="fv-block-owner" data-fv-block>
-        {% for s in ws.space %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+        {% for s in ws.space %}<option value="{{ s.id }}">{{ s.name }} · {{ BLOCK_HI[s.id] }}</option>{% endfor %}
       </select>
     </div>
   </div>
   {% if ws.overflow %}
   <ul class="fv-alerts" data-fv-overflow>
     {% for o in ws.overflow %}
-    <li data-block="{{ o.id }}"><strong>{{ o.name }}: +{{ o.short_t|tonnes }}</strong> expected overflow <span class="fv-sub" data-km></span></li>
+    <li data-block="{{ o.id }}"><strong>{{ t(o.name, BLOCK_HI[o.id]) }}: +{{ o.short_t|tonnes }}</strong> {{ t('expected overflow', 'अनुमानित अतिरिक्त माल') }} <span class="fv-sub" data-km></span></li>
     {% endfor %}
   </ul>
   {% else %}
-  <p class="fv-line">No block runs out of space at peak, so no overflow is expected.</p>
+  <p class="fv-line">{{ t('No block runs out of space at peak, so no overflow is expected.', 'पीक पर किसी ब्लॉक में जगह कम नहीं है, इसलिए अतिरिक्त माल की उम्मीद नहीं है।') }}</p>
   {% endif %}
   <p class="fv-note">Overflow = produce a block can't store locally at its {{ ws.peak_month }} peak, at the assumed capacity. Distances are straight-line between block headquarters.</p>
 </section>

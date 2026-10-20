@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% import "macros.html" as m with context %}
+{% from "partials/voice.html" import mic, voice_status %}
+{% from "partials/i18n.html" import t %}
 {% block title %}Block strain map · Hathras · ColdFlow{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -79,6 +81,14 @@
       </div>
       <div class="card">
         <div class="card-head"><div><h3>Blocks ranked by strain</h3><p data-bind="caption">{{ i.season }} · capacity {{ i.capacity|tonnes }}</p></div></div>
+        <div class="card-body block-filter">
+          <label class="fv-label" for="block-filter">{{ t('Find a block', 'ब्लॉक खोजें') }}</label>
+          <div class="voice-field">
+            <input class="input-text" type="search" id="block-filter" data-block-filter autocomplete="off" placeholder="e.g. Sadabad / सादाबाद">
+            {{ mic('#block-filter', 'filter the block list') }}
+          </div>
+          {{ voice_status() }}
+        </div>
         <div class="table-wrap">
           <table class="table">
             <thead><tr><th>Block</th><th class="r">Demand</th><th class="r">Capacity</th><th class="r">Util.</th><th class="r">Status</th></tr></thead>

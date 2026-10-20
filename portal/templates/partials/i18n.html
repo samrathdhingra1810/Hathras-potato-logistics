@@ -1,0 +1,2 @@
+{# t(en, hi): both strings render; CSS shows the one for the chosen language (no reload, no flash). #}
+{% macro t(en, hi) -%}<span class="t-en">{{ en }}</span><span class="t-hi" lang="hi">{{ hi }}</span>{%- endmacro %}

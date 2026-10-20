@@ -62,17 +62,38 @@
       marker.addTo(layer);
     });
 
-    var rows = scenario.blocks.slice().sort(function (a, b) { return utilFor(b) - utilFor(a); }).map(function (b) {
+    var only = filterIds();
+    var shown = scenario.blocks.filter(function (b) { return !only || only.indexOf(b.id) >= 0; });
+    var rows = shown.slice().sort(function (a, b) { return utilFor(b) - utilFor(a); }).map(function (b) {
       var u = utilFor(b), lv = levelFor(u);
       return '<tr data-id="' + b.id + '"' + (selected === b.id ? ' class="sel"' : '') + '><td><strong>' + esc(b.name) + '</strong></td><td class="r">' +
         t(b.demand_t) + '</td><td class="r">' + t(b.capacity_t) + '</td><td class="r">' + pct(u, 1) +
         '</td><td class="r"><span class="badge lvl-' + lv + '"><i aria-hidden="true">' + ICONS[lv] + '</i>' + LABELS[lv] + '</span></td></tr>';
     });
-    document.getElementById('block-rows').innerHTML = rows.join('');
+    document.getElementById('block-rows').innerHTML = rows.length ? rows.join('')
+      : '<tr><td colspan="5" class="muted">No block matches “' + esc(filterEl.value) + '”.</td></tr>';
     document.querySelector('[data-bind="caption"]').textContent = scenario.inputs.season + ' · ' +
       (month === 'peak' ? 'peak month' : month) + ' · capacity ' + t(scenario.inputs.total_capacity || scenario.inputs.capacity);
     if (selected) detail(selected);
   }
+
+  // Block filter (typed or spoken). Matches English and Hindi names and common spellings.
+  var filterEl = document.getElementById('block-filter');
+  function filterIds() {
+    var q = filterEl ? filterEl.value.trim().toLowerCase() : '';
+    if (!q) return null;
+    var blocks = (window.CF && CF.blocks) || [];
+    var hits = blocks.filter(function (b) {
+      return [b.name, b.hi].concat(b.aliases || []).some(function (n) { return String(n).toLowerCase().indexOf(q) >= 0; });
+    }).map(function (b) { return b.id; });
+    if (!hits.length && window.CFVoice) { var m = CFVoice.matchBlock(q); if (m) hits = [m.id]; }
+    return hits;
+  }
+  if (filterEl) filterEl.addEventListener('input', function () {
+    var only = filterIds();
+    if (only && only.length === 1 && selected !== only[0]) { select(only[0]); return; }
+    render();
+  });
 
   function detail(id) {
     var b = scenario.blocks.filter(function (x) { return x.id === id; })[0];

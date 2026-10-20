@@ -14,7 +14,7 @@ FACILITY_CONTACTS: list[dict] = []
 
 # Traffic-light wording for block status (levels come from core.storage.block_strain).
 SPACE_STATUS = {
-    "good": {"light": "green", "label": "Space available", "hi": "जगह उपलब्ध"},
+    "good": {"light": "green", "label": "Available storage", "hi": "उपलब्ध भंडारण"},
     "warning": {"light": "yellow", "label": "Filling up", "hi": "भर रहा है"},
     "serious": {"light": "red", "label": "Nearly full", "hi": "लगभग भरा"},
     "critical": {"light": "red", "label": "Full at peak", "hi": "पीक पर भरा"},

@@ -1,0 +1,24 @@
+{# Voice controls (static/js/voice.js). Buttons start hidden and only appear when the
+   browser supports the API, so unsupported phones never see a dead control. #}
+{% from "partials/i18n.html" import t %}
+
+{# Speaker: reads `en` or `hi` aloud in the chosen language. #}
+{% macro say(en, hi, what) -%}
+<button class="say-btn" type="button" data-say data-say-en="{{ en }}" data-say-hi="{{ hi }}" aria-pressed="false" aria-label="Read {{ what }} aloud" title="Read aloud / सुनें" hidden>
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>
+  <span aria-hidden="true">{{ t('Listen', 'सुनें') }}</span>
+</button>
+{%- endmacro %}
+
+{# Microphone: fills the block picker or filter `target` (a CSS selector) from speech. #}
+{% macro mic(target, what) -%}
+<button class="mic-btn" type="button" data-voice-target="{{ target }}" aria-pressed="false" aria-label="Say a block name to {{ what }}" title="Speak a block name / ब्लॉक का नाम बोलें" hidden>
+  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2z"/></svg>
+</button>
+{%- endmacro %}
+
+{# Status line for voice results, and the privacy note shown only where voice input works. #}
+{% macro voice_status() -%}
+<p class="voice-status" data-voice-status aria-live="polite" hidden></p>
+<p class="fv-note" data-voice-note hidden>{{ t("Voice input uses your browser's speech service; in Chrome the audio is sent to Google for recognition.", 'आवाज़ से खोज आपके ब्राउज़र की स्पीच सेवा से होती है; Chrome में आवाज़ पहचान के लिए Google को भेजी जाती है।') }}</p>
+{%- endmacro %}

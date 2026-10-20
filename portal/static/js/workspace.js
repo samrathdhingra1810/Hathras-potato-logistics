@@ -1,4 +1,4 @@
-// Workspaces: "your block" picker, directions, overflow by distance, Hindi subtitles.
+// Workspaces: "your block" picker, directions, overflow by distance. Language comes from the header switch.
 // Display only; every figure was rendered by the server from the scenario.
 (function () {
   var store = {
@@ -6,18 +6,9 @@
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
   };
 
-  // Hindi subtitles (per-viewer preference).
-  function setHindi(on) {
-    document.documentElement.setAttribute('data-hindi', on ? 'on' : 'off');
-    document.querySelectorAll('[data-hindi-toggle]').forEach(function (b) { b.setAttribute('aria-pressed', String(on)); });
-  }
-  setHindi(store.get('cf-hindi') === 'on');
-  document.querySelectorAll('[data-hindi-toggle]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var on = document.documentElement.getAttribute('data-hindi') !== 'on';
-      setHindi(on); store.set('cf-hindi', on ? 'on' : 'off');
-    });
-  });
+  var hiName = {};
+  ((window.CF && CF.blocks) || []).forEach(function (b) { hiName[b.id] = b.hi; });
+  function lang() { return window.CF && CF.lang ? CF.lang() : 'en'; }
 
   // Assistant prompt buttons.
   document.querySelectorAll('[data-ask-ws]').forEach(function (b) {
@@ -51,6 +42,8 @@
           dir.href = 'https://www.google.com/maps/dir/?api=1&destination=' + target.lat + ',' + target.lng;
           var dest = dir.querySelector('[data-fv-dest]');
           if (dest) dest.textContent = target.name;
+          var destHi = dir.querySelector('[data-fv-dest-hi]');
+          if (destHi) destHi.textContent = hiName[target.id] || target.name;
         }
       }
 
@@ -61,13 +54,16 @@
         items.sort(function (a, b) { return dist[id][a.dataset.block] - dist[id][b.dataset.block]; });
         items.forEach(function (li) {
           var km = dist[id][li.dataset.block];
-          li.querySelector('[data-km]').textContent = li.dataset.block === id ? '· your block' : '· ' + km + ' km from your block';
+          var hi = lang() === 'hi';
+          li.querySelector('[data-km]').textContent = li.dataset.block === id ? (hi ? '· आपका ब्लॉक' : '· your block')
+            : '· ' + km + (hi ? ' किमी दूर' : ' km from your block');
           list.appendChild(li);
         });
       }
     }
 
     select.addEventListener('change', function () { apply(select.value); store.set('cf-block', select.value); });
+    document.addEventListener('cf:lang', function () { apply(select.value); });
     apply(store.get('cf-block') || select.value);
   });
 })();

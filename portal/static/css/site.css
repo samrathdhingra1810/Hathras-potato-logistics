@@ -846,7 +846,6 @@ body.home-tw .nav .wordmark { color: #f1f5f9; }
 .fv-yellow { --fv: var(--status-warning); }
 .fv-red { --fv: var(--status-critical); }
 .fv-status i { color: var(--fv); }
-.fv-status .hi { font-weight: 500; font-size: 0.85rem; color: var(--ink-2); }
 
 .fv-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .fv-card { background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--fv); border-radius: var(--radius-sm); padding: 14px 16px; display: grid; gap: 6px; }
@@ -883,21 +882,50 @@ details.advanced > summary { cursor: pointer; min-height: 48px; padding: 12px 18
 details.advanced > summary::-webkit-details-marker { display: none; }
 details.advanced > summary::after { content: "Show"; font-weight: 600; font-size: 0.85rem; color: var(--brand-ink); }
 details.advanced[open] > summary::after { content: "Hide"; }
-details.advanced > summary .hi { font-weight: 500; }
 .advanced-body { padding: 0 18px 18px; }
 .kpi-est-wrap { position: relative; display: grid; }
 .kpi-est-wrap > .est-tag { position: absolute; top: 10px; right: 10px; }
 .kpi-est-wrap > .card { border-style: dashed; }
 
-/* Hindi subtitles: hidden until the viewer turns them on. */
-.hi { display: none; }
-:root[data-hindi="on"] .hi { display: block; font-size: 0.86em; font-weight: 500; color: var(--ink-2); }
-:root[data-hindi="on"] .fv-btn .hi, :root[data-hindi="on"] .fv-status .hi { display: inline; }
-.lang-toggle { min-height: 48px; }
-.lang-toggle[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+/* Language: every translated label renders both strings; the chosen one shows.
+   The <head> script sets data-lang before paint, so nothing flashes or shifts on load. */
+.t-hi { display: none; }
+:root[data-lang="hi"] .t-en { display: none; }
+:root[data-lang="hi"] .t-hi { display: inline; }
+:root[data-lang="hi"] body { line-height: 1.6; }   /* Devanagari needs a little more leading */
+
+.lang-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 2px; }
+.lang-switch button {
+  min-height: 48px; min-width: 48px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--ink-2); font: 600 0.86rem var(--font); cursor: pointer;
+}
+.lang-switch button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.lang-switch button:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
 
 /* Field use on phones: comfortable touch targets for every button and dropdown. */
 @media (pointer: coarse) {
   .btn, .btn-sm, select.input, .seg button, details.panel > summary, .tool-tabs a, .assistant-suggest button { min-height: 48px; }
   .btn, .btn-sm, .tool-tabs a { display: inline-flex; align-items: center; justify-content: center; }
 }
+
+/* ---------- Voice controls: read aloud and speak a block name ----------
+   48px targets for field use; state shown by icon, label and outline, not colour alone. */
+.fv-say-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.say-btn, .mic-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; min-width: 48px;
+  padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2);
+  font: 600 0.86rem var(--font); cursor: pointer; flex: none;
+}
+.say-btn:hover, .mic-btn:hover { color: var(--ink); background: var(--surface-2); }
+.say-btn:focus-visible, .mic-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.say-btn.is-speaking, .mic-btn.is-listening { color: var(--ink); border-color: var(--ink); box-shadow: 0 0 0 2px var(--ink) inset; }
+.mic-btn { padding: 0; width: 48px; }
+.mic-btn.is-listening svg { animation: mic-pulse 1.2s ease-in-out infinite; }
+@keyframes mic-pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .mic-btn.is-listening svg { animation: none; } }
+.voice-field { display: flex; gap: 8px; align-items: stretch; }
+.voice-field > select, .voice-field > input { flex: 1; min-width: 0; min-height: 48px; font-size: 1rem; }
+.voice-status { margin: 4px 0 0; font-size: 0.88rem; color: var(--ink); }
+.voice-toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); max-width: min(92vw, 520px); margin: 0;
+  padding: 10px 14px; border-radius: 10px; background: var(--ink); color: var(--surface); font-size: 0.9rem; z-index: 60; }
+.block-filter { border-bottom: 1px solid var(--line); display: grid; gap: 6px; }
