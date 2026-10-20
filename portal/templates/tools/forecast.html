@@ -15,16 +15,27 @@
 <div class="container stack">
   {{ m.tool_tabs('tool_forecast') }}
 
-  <div class="grid grid-4">
+  {% set last = series[-1] %}
+  <section class="season-cards" aria-label="Latest recorded season and modelled seasons">
+    <article class="season-card">
+      <header><h3>{{ last.season }}</h3><span class="rec-tag">Verified actual</span></header>
+      <dl>
+        <div><dt>Production</dt><dd>{{ '%.3f'|format(last.production_t / 1e6) }}<small>M t</small></dd></div>
+        <div><dt>Yield</dt><dd>{{ '%.2f'|format(last.yield_kg_ha / 1000) }}<small>t/ha</small></dd></div>
+      </dl>
+      <div class="range">District series, area {{ last.area_ha|num }} ha</div>
+    </article>
     {% for r in rows %}
-    {{ m.kpi(('Estimated' if r.status == 'estimate' else 'Projected') ~ ' production · ' ~ r.season, '%.3f'|format(r.production_t / 1e6), 'M t', None, None,
-             '95% range ' ~ (r.production_lower|tonnes) ~ ' – ' ~ (r.production_upper|tonnes)) }}
+    <article class="season-card{{ ' is-estimate' if r.status == 'estimate' }}">
+      <header><h3>{{ r.season }}</h3>{% if r.status == 'estimate' %}<span class="est-tag">ESTIMATED (Pending Actuals)</span>{% else %}<span class="tag">Forecast</span>{% endif %}</header>
+      <dl>
+        <div><dt>{{ 'Estimated' if r.status == 'estimate' else 'Projected' }} production</dt><dd>{{ '%.3f'|format(r.production_t / 1e6) }}<small>M t</small></dd></div>
+        <div><dt>{{ 'Estimated' if r.status == 'estimate' else 'Projected' }} yield</dt><dd>{{ '%.2f'|format(r.yield_kg_ha / 1000) }}<small>t/ha</small></dd></div>
+      </dl>
+      <div class="range">95% range {{ r.production_lower|tonnes }} – {{ r.production_upper|tonnes }} · area ~{{ r.area_ha|num }} ha</div>
+    </article>
     {% endfor %}
-    {% for r in rows %}
-    {{ m.kpi(('Estimated' if r.status == 'estimate' else 'Projected') ~ ' yield · ' ~ r.season, '%.2f'|format(r.yield_kg_ha / 1000), 't/ha', None, None,
-             'Area ~' ~ (r.area_ha|num) ~ ' ha') }}
-    {% endfor %}
-  </div>
+  </section>
 
   <div class="split split-3-2">
     <div class="card">
@@ -46,6 +57,7 @@
           <li><span class="sw" style="--c:var(--series-1)"></span>Actual</li>
           <li><span class="sw dash" style="--c:var(--series-1)"></span><span data-bind="model-legend">Linear-trend {{ forecast_word }}</span></li>
           <li><span class="sw band" style="--c:var(--band-1)"></span>95% prediction interval</li>
+          {% if harvested_forecasts %}<li><span class="sw hatch-sw"></span>Shaded seasons: ESTIMATED (Pending Actuals)</li>{% endif %}
         </ul>
         <div class="chart-box tall"><canvas id="forecast-chart" aria-label="Actual and forecast values by season"></canvas></div>
       </div>
@@ -66,16 +78,21 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><div><h3>{{ forecast_word|capitalize }} table</h3><p>Point estimate and 95% interval</p></div></div>
+        <div class="card-head"><div><h3>Recorded season and {{ forecast_word }}</h3><p>Point estimate and 95% interval</p></div></div>
         <div class="table-wrap">
-          <table class="table">
-            <thead><tr><th>Season</th><th class="r">Production</th><th class="r">Yield</th></tr></thead>
+          <table class="table dense">
+            <thead><tr><th>Season</th><th class="r">Production (t)</th><th class="r">Yield (kg/ha)</th></tr></thead>
             <tbody>
-              {% for r in rows %}
               <tr>
-                <td><strong>{{ r.season }}</strong><br><span class="xs muted">{{ r.status_label }}</span></td>
-                <td class="r">{{ r.production_t|num }} t<br><span class="xs muted">{{ r.production_lower|tonnes }} – {{ r.production_upper|tonnes }}</span></td>
-                <td class="r">{{ r.yield_kg_ha|num }} kg/ha<br><span class="xs muted">{{ r.yield_lower|num }} – {{ r.yield_upper|num }}</span></td>
+                <td><strong>{{ last.season }}</strong><br><span class="rec-tag" style="margin-top:4px">Verified actual</span></td>
+                <td class="r"><strong>{{ last.production_t|num }}</strong><br><span class="xs muted">recorded</span></td>
+                <td class="r"><strong>{{ last.yield_kg_ha|num }}</strong><br><span class="xs muted">recorded</span></td>
+              </tr>
+              {% for r in rows %}
+              <tr{% if r.status == 'estimate' %} class="is-estimate-row"{% endif %}>
+                <td><strong>{{ r.season }}</strong><br>{% if r.status == 'estimate' %}<span class="est-tag" style="margin-top:4px">ESTIMATED (Pending Actuals)</span>{% else %}<span class="tag">Forecast</span>{% endif %}</td>
+                <td class="r"><strong>{{ r.production_t|num }}</strong><br><span class="xs muted">{{ r.production_lower|tonnes }} – {{ r.production_upper|tonnes }}</span></td>
+                <td class="r"><strong>{{ r.yield_kg_ha|num }}</strong><br><span class="xs muted">{{ r.yield_lower|num }} – {{ r.yield_upper|num }}</span></td>
               </tr>
               {% endfor %}
             </tbody>

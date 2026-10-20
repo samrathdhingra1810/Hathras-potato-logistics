@@ -14,9 +14,10 @@
   <div class="card-body"><p class="muted" style="margin:0">{{ a.message }}</p></div>
   {% else %}
   <div class="table-wrap">
-    <table class="table">
+    <table class="table dense">
       <thead>
-        <tr><th>Model</th><th class="r">MAE · 1 season</th><th class="r">WAPE · 1</th><th class="r">Bias · 1</th><th class="r">Skill vs naive</th><th class="r">WAPE · 2 seasons</th><th class="r">Bias · 2</th></tr>
+        <tr><th rowspan="2">Model</th><th colspan="4" class="group">1 season ahead</th><th colspan="2" class="group">2 seasons ahead</th></tr>
+        <tr><th class="r">MAE</th><th class="r">WAPE</th><th class="r">Bias</th><th class="r">Skill vs naive</th><th class="r">WAPE</th><th class="r">Bias</th></tr>
       </thead>
       <tbody>
         {% for mdl in ev.models %}{% set m1 = ev.metrics[mdl.key]['1'] %}{% set m2 = ev.metrics[mdl.key]['2'] %}
@@ -44,7 +45,7 @@
     <details>
       <summary class="small" style="cursor:pointer;font-weight:600">Every test forecast ({{ ev.rows|length }})</summary>
       <div class="table-wrap" style="margin-top:8px">
-        <table class="table">
+        <table class="table dense">
           <thead><tr><th>Model</th><th>Trained to</th><th>Predicted</th><th class="r">Horizon</th><th class="r">Forecast</th><th class="r">Actual</th><th class="r">Error</th></tr></thead>
           <tbody>
             {% for r in ev.rows %}

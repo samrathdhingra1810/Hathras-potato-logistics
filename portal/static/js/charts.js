@@ -251,6 +251,37 @@
     return { type: 'line', data: { labels: series.map(function (r) { return r.season; }), datasets: datasets }, options: o };
   };
 
+  /** Shades seasons whose harvest is over but which only have model values (status 'estimate')
+   *  with a hatched band and an on-chart label, so they read as estimates without relying on colour. */
+  function estimateRegion(firstIdx, lastIdx, compact) {
+    return {
+      id: 'estimateRegion',
+      beforeDatasetsDraw: function (chart) {
+        var x = chart.scales.x, area = chart.chartArea, ctx = chart.ctx;
+        var step = x.getPixelForValue(1) - x.getPixelForValue(0);
+        var left = Math.max(area.left, x.getPixelForValue(firstIdx) - step / 2);
+        var right = Math.min(area.right, x.getPixelForValue(lastIdx) + step / 2);
+        var p = document.createElement('canvas'); p.width = p.height = 8;
+        var pc = p.getContext('2d');
+        pc.strokeStyle = HP.color('--axis'); pc.lineWidth = 1;
+        pc.beginPath(); pc.moveTo(0, 8); pc.lineTo(8, 0); pc.stroke();
+        ctx.save();
+        ctx.fillStyle = ctx.createPattern(p, 'repeat');
+        ctx.fillRect(left, area.top, right - left, area.bottom - area.top);
+        ctx.setLineDash([4, 3]); ctx.strokeStyle = HP.color('--ink-muted'); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(left, area.top); ctx.lineTo(left, area.bottom); ctx.stroke();
+        ctx.font = '700 11px ' + getComputedStyle(document.body).fontFamily;
+        var room = right - left - 12;
+        var label = !compact && ctx.measureText('ESTIMATED (Pending Actuals)').width <= room ? 'ESTIMATED (Pending Actuals)' : 'ESTIMATED';
+        if (ctx.measureText(label).width <= room) {
+          ctx.fillStyle = HP.color('--ink-2'); ctx.textBaseline = 'top';
+          ctx.fillText(label, left + 6, area.top + 6);
+        }
+        ctx.restore();
+      },
+    };
+  }
+
   /** metric: 'production' | 'yield'. Actual solid, forecast dashed, 95% band. */
   HP.forecastConfig = function (series, rows, metric, opts) {
     opts = opts || {};
@@ -284,8 +315,10 @@
         return i >= n ? '95% range ' + fmt(lower[i]) + ' – ' + fmt(upper[i]) : '';
       },
     };
+    var est = rows.map(function (r, k) { return r.status === 'estimate' ? n + k : -1; }).filter(function (k) { return k >= 0; });
     return {
       type: 'line',
+      plugins: est.length ? [estimateRegion(est[0], est[est.length - 1], opts.compact)] : [],
       data: { labels: labels, datasets: [
         { label: 'lower', data: lower, borderWidth: 0, pointRadius: 0, pointHoverRadius: 0, fill: false },
         { label: 'upper', data: upper, borderWidth: 0, pointRadius: 0, pointHoverRadius: 0, fill: '-1', backgroundColor: band },

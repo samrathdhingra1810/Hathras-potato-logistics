@@ -1,5 +1,41 @@
 {# Role workspace content. Needs `ws` from roles.workspace_data() and macros `m`. #}
 {% set sc = ws.scenario %}{% set sim = sc.simulation %}{% set econ = sc.economics %}
+{% import "partials/field_view.html" as fv with context %}
+{% if ws.role == 'fpo' %}
+  {{ fv.action_view() }}
+  {{ fv.block_cards() }}
+{% elif ws.role == 'owner' %}
+  <section class="fv-cards" aria-label="Your season at a glance">
+    <article class="fv-act {{ 'fv-red' if sim.peak_utilisation > 1 else 'fv-yellow' if sim.peak_utilisation >= sc.inputs.threshold else 'fv-green' }}">
+      <h2>District stores at peak<span class="hi" lang="hi">पीक पर ज़िले के स्टोर</span></h2>
+      <p class="fv-big">{{ sim.peak_utilisation|pct(0) }} full</p>
+      <p class="fv-line">in {{ fv.EN_MONTH[sim.peak_month] }}, {{ sc.inputs.season }} harvest</p>
+    </article>
+    <article class="fv-act">
+      <h2>Produce looking for space<span class="hi" lang="hi">जगह ढूँढ रहा माल</span></h2>
+      <p class="fv-big">{{ sim.total_overflow_t|tonnes }}</p>
+      <p class="fv-line">potential customers with nowhere to store</p>
+    </article>
+    <article class="fv-act">
+      <h2>Power cost per tonne<span class="hi" lang="hi">प्रति टन बिजली लागत</span></h2>
+      <p class="fv-big">₹{{ econ.cost_per_t_stored_rs|num }}</p>
+      <p class="fv-line">for the season, at ₹{{ econ.rate_rs_kwh }}/kWh (placeholder)</p>
+    </article>
+    <article class="fv-act">
+      <h2>District power bill<span class="hi" lang="hi">ज़िले का बिजली बिल</span></h2>
+      <p class="fv-big">₹{{ '%.1f'|format(econ.season_cost_rs / 1e7) }} crore</p>
+      <p class="fv-line">all stores, whole season (placeholder tariff)</p>
+    </article>
+  </section>
+  {{ fv.basis() }}
+  {{ fv.overflow_alerts() }}
+{% endif %}
+
+{% if ws.role != 'admin' %}
+<details class="advanced" data-advanced>
+  <summary>Advanced Data &amp; Methodology<span class="hi" lang="hi">विस्तृत आँकड़े और पद्धति</span></summary>
+  <div class="advanced-body">
+{% endif %}
 <div class="grid grid-4">
   {% if ws.role == 'owner' %}
     {{ m.kpi('District peak utilisation', sim.peak_utilisation|pct(0), None, None, None, 'in ' ~ sim.peak_month ~ ' · ' ~ sc.inputs.season) }}
@@ -8,7 +44,9 @@
     {{ m.kpi('Unserved demand', sim.total_overflow_t|tonnes, None, None, None, 'produce looking for space') }}
   {% elif ws.role == 'fpo' %}
     {{ m.kpi('Book space before', ws.book_before or '—', None, None, None, 'when district storage passes the watch level') }}
+    {% if ws.next_forecast.status == 'estimate' %}<div class="kpi-est-wrap">{% endif %}
     {{ m.kpi('Harvest estimate (past season)' if ws.next_forecast.status == 'estimate' else 'Next harvest forecast', ws.next_forecast.production_t|tonnes, None, None, None, ws.next_forecast.season ~ ' · linear trend, 95% range ' ~ (ws.next_forecast.production_lower|tonnes) ~ '–' ~ (ws.next_forecast.production_upper|tonnes)) }}
+    {% if ws.next_forecast.status == 'estimate' %}<span class="est-tag">ESTIMATED (Pending Actuals)</span></div>{% endif %}
     {{ m.kpi('5-year average harvest', ws.five_year_avg_t|tonnes, None, None, None, 'for comparison') }}
     {{ m.kpi('Without cold storage', sim.total_overflow_t|tonnes, None, None, None, 'risk of distress sales') }}
   {% else %}
@@ -48,8 +86,10 @@
       <li><a href="{{ url_for('tool_map') }}">Block map</a>: nearest blocks with spare space</li>
       <li><a href="{{ url_for('tool_forecast') }}">Harvest forecast</a>: next season vs past seasons</li>
       {% else %}
-      <li><a href="{{ url_for('tool_map') }}">Block map</a>: deficit heatmap by month</li>
+      <li><a href="{{ url_for('tool_map') }}">Block map</a>: deficit heatmap by month, distance matrix</li>
       <li><a href="{{ url_for('tool_planner') }}">Capacity planner</a>: test new capacity and yield shocks, export Excel</li>
+      <li><a href="{{ url_for('tool_forecast') }}#evaluation">Harvest forecast</a>: linear trend projections and full backtest tables</li>
+      <li><a href="{{ url_for('production_csv') }}">Download the Hathras CSV</a> and <a href="{{ url_for('data') }}">the API</a></li>
       {% endif %}
     </ul>
   </div>
@@ -60,3 +100,8 @@
   {% elif ws.role == 'fpo' %}Mandi price trends aren't connected yet (they need an AGMARKNET / data.gov.in data source). Storage figures use the Hathras planning assumptions.
   {% else %}Figures use the Hathras dataset and planning assumptions (capacity, calendar, block split). Load the cold storage registry for an authoritative view.{% endif %}
 </div>
+{% if ws.role != 'admin' %}
+    <p class="small" style="margin:12px 0 0"><a href="{{ url_for('about') }}#methodology">How these numbers are calculated</a></p>
+  </div>
+</details>
+{% endif %}

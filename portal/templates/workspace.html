@@ -7,6 +7,7 @@
     <div class="crumbs"><a href="{{ url_for('home') }}">Home</a> / Workspaces</div>
     <h1>{{ ws.meta.label }} workspace</h1>
     <p class="lead" style="max-width:720px">{{ ws.meta.tagline }} Built on the Hathras example.</p>
+    {% if ws.role != 'admin' %}<p style="margin:14px 0 0"><button class="btn btn-ghost lang-toggle" type="button" data-hindi-toggle aria-pressed="false"><span lang="hi">हिंदी</span>&nbsp;subtitles</button></p>{% endif %}
   </div>
 </section>
 <div class="container stack">
@@ -22,9 +23,5 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script>
-  document.querySelectorAll('[data-ask-ws]').forEach(function (b) {
-    b.addEventListener('click', function () { window.CFAssistant && window.CFAssistant.open(b.dataset.askWs, true); });
-  });
-</script>
+<script src="{{ url_for('static', filename='js/workspace.js') }}"></script>
 {% endblock %}

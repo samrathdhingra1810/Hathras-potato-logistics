@@ -7,3 +7,6 @@ __pycache__/
 react-version/node_modules
 react-version/dist
 instance/
+
+# Locally installed Claude skills (not part of the app)
+.claude/skills/

@@ -218,6 +218,8 @@
 
     storageChart.rebuild();
     forecastChart.rebuild();
+    var legendEst = document.querySelector('[data-est-legend]');
+    if (legendEst) legendEst.hidden = !fcRows().some(function (r) { return r.status === 'estimate'; });
   }
 
   function renderFcTable() {

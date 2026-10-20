@@ -3,3 +3,4 @@ react-version
 tests
 **/__pycache__
 .env.local
+.claude/skills/

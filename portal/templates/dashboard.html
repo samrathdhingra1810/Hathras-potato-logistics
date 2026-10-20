@@ -2,11 +2,7 @@
 {% import "macros.html" as m with context %}
 {% block title %}Dashboard · ColdFlow{% endblock %}
 {% block scripts %}
-<script>
-  document.querySelectorAll('[data-ask-ws]').forEach(function (b) {
-    b.addEventListener('click', function () { window.CFAssistant && window.CFAssistant.open(b.dataset.askWs, true); });
-  });
-</script>
+<script src="{{ url_for('static', filename='js/workspace.js') }}"></script>
 {% endblock %}
 {% block content %}
 <section class="page-head">

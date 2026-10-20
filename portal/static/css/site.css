@@ -217,6 +217,7 @@ code { font-size: 0.9em; background: var(--surface-2); padding: 0.1em 0.35em; bo
 .grid-3 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
 .grid-4 { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
 .split { display: grid; gap: 20px; grid-template-columns: 1fr; }
+.split > * { min-width: 0; }   /* let wide tables scroll inside their column instead of squeezing the other */
 @media (min-width: 980px) {
   .split-3-2 { grid-template-columns: 3fr 2fr; }
   .split-1-2 { grid-template-columns: 340px 1fr; }
@@ -277,6 +278,45 @@ a.card-link:hover { text-decoration: none; border-color: var(--brand); transform
 }
 .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--brand-soft); color: var(--brand-ink); font-size: 0.76rem; font-weight: 600; }
 :root[data-theme="dark"] .pill { color: #b7d3f6; }
+
+/* ---------- Recorded vs estimated seasons ----------
+   One visual language everywhere: verified actuals are solid; modelled values for
+   seasons already harvested are hatched with a dashed edge and carry a text tag, so
+   the state never depends on colour alone. Hatch is ink at low alpha (works in dark). */
+:root { --hatch: color-mix(in srgb, var(--ink) 14%, transparent); --hatch-strong: color-mix(in srgb, var(--ink) 42%, transparent); }
+.hatch { background-image: repeating-linear-gradient(135deg, var(--hatch) 0 2px, transparent 2px 7px); }
+.hatch-strong { background-image: repeating-linear-gradient(135deg, var(--hatch-strong) 0 2px, transparent 2px 6px); }
+.est-tag, .rec-tag {
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 4px;
+  font-size: 0.7rem; font-weight: 700; line-height: 1.5; white-space: nowrap; color: var(--ink); vertical-align: middle;
+}
+.est-tag { border: 1px dashed var(--ink-2); letter-spacing: 0.03em;
+  background-image: repeating-linear-gradient(135deg, var(--hatch) 0 2px, transparent 2px 6px); }
+.rec-tag { border: 1px solid var(--line); background: var(--surface-2); font-weight: 600; color: var(--ink-2); }
+.rec-tag::before { content: ""; width: 8px; height: 8px; border-radius: 1px; background: var(--ink); }
+.est-tag::before { content: ""; width: 8px; height: 8px; border-radius: 1px; border: 1px dashed var(--ink); }
+.is-estimate { border-style: dashed !important; border-color: var(--ink-muted) !important; }
+.table .est-tag { white-space: normal; max-width: 11rem; }
+
+/* Season cards on the forecast page: one card per season, recorded first. */
+.season-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.season-card { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); padding: 14px 16px; display: grid; gap: 8px; }
+.season-card.is-estimate { background-image: repeating-linear-gradient(135deg, var(--hatch) 0 1px, transparent 1px 9px); }
+.season-card header { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.season-card h3 { margin: 0; font-size: 1rem; font-variant-numeric: tabular-nums; }
+.season-card dl { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+.season-card dt { font-size: 0.74rem; color: var(--ink-2); }
+.season-card dd { margin: 0; font-weight: 700; font-size: 1.35rem; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.season-card dd small { font-size: 0.78rem; font-weight: 600; color: var(--ink-2); margin-left: 3px; }
+.season-card .range { font-size: 0.76rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+/* Denser numeric tables (forecast, backtest). */
+table.table.dense th { padding: 7px 10px; }
+table.table.dense td { padding: 7px 10px; }
+table.table.dense th.group { text-align: center; border-bottom: 1px solid var(--line); color: var(--ink-2); }
+table.table tr.is-estimate-row td { background-image: repeating-linear-gradient(135deg, var(--hatch) 0 1px, transparent 1px 9px); }
+.legend .sw.hatch-sw { width: 16px; height: 10px; border: 1px dashed var(--ink-2); border-radius: 2px;
+  background-image: repeating-linear-gradient(135deg, var(--hatch-strong) 0 2px, transparent 2px 5px); }
 
 /* ---------- Alert ---------- */
 .alert {
@@ -779,3 +819,85 @@ body.home-tw .nav {
   background: rgba(2, 6, 23, 0.92); border-bottom-color: #1e293b; color-scheme: dark;
 }
 body.home-tw .nav .wordmark { color: #f1f5f9; }
+
+/* ---------- Field view: farmers, FPOs and store owners ----------
+   Plain-language tiles first; dense data sits behind "Advanced Data & Methodology".
+   Traffic lights always pair colour with a shape and words. Touch targets >= 48px. */
+.fv-actions { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
+.fv-tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.fv-tile h2, .fv-act h2 { display: flex; align-items: flex-start; gap: 8px; margin: 0; font-size: 1.02rem; line-height: 1.3; }
+.fv-tile h2 > span, .fv-act h2 { display: flex; flex-direction: column; }
+.fv-icon { flex: none; color: var(--ink-2); margin-top: 1px; }
+.fv-label { font-size: 0.85rem; font-weight: 600; color: var(--ink-2); }
+.fv-select, .fv-btn { min-height: 48px; font-size: 1rem; }
+.fv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; text-align: center; }
+.fv-big { margin: 0; font-size: 1.6rem; font-weight: 750; letter-spacing: -0.01em; line-height: 1.2; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.fv-line { margin: 0; color: var(--ink-2); line-height: 1.5; }
+.fv-note { margin: 0; font-size: 0.8rem; color: var(--ink-muted); }
+.fv-basis { margin: 10px 0 0; font-size: 0.85rem; color: var(--ink-2); }
+.fv-h { font-size: 1.15rem; margin: 22px 0 12px; display: flex; flex-direction: column; }
+.fv-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 10px 20px; }
+.fv-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 22px 0 12px; }
+
+/* Status: colour + shape + label. Text stays in ink for contrast. */
+.fv-status { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 1rem; color: var(--ink); flex-wrap: wrap; }
+.fv-status i { font-style: normal; font-size: 0.8rem; }
+.fv-green { --fv: var(--status-good); }
+.fv-yellow { --fv: var(--status-warning); }
+.fv-red { --fv: var(--status-critical); }
+.fv-status i { color: var(--fv); }
+.fv-status .hi { font-weight: 500; font-size: 0.85rem; color: var(--ink-2); }
+
+.fv-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.fv-card { background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--fv); border-radius: var(--radius-sm); padding: 14px 16px; display: grid; gap: 6px; }
+.fv-card h3 { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 1.05rem; }
+.fv-card p { margin: 0; }
+.fv-num { font-size: 1.2rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.fv-sub { font-size: 0.85rem; font-weight: 400; color: var(--ink-2); }
+.fv-card.is-mine { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+/* Month strip: bar height = how full district storage is; peak and book-before marked. */
+.fv-months { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; align-items: end; height: 84px; }
+.fv-m { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 3px; }
+.fv-bar { width: 100%; height: var(--h); min-height: 2px; background: var(--c); border-radius: 3px 3px 0 0; opacity: 0.85; }
+.fv-m.lvl-good .fv-bar { background: var(--axis); }
+.fv-mn { font-size: 0.72rem; color: var(--ink-muted); }
+.fv-m.is-peak .fv-mn { color: var(--ink); font-weight: 800; }
+.fv-m.is-peak .fv-bar { outline: 2px solid var(--ink); outline-offset: 1px; opacity: 1; }
+.fv-m.is-book .fv-mn { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; color: var(--ink); font-weight: 700; }
+.fv-key { margin: 0; font-size: 0.78rem; color: var(--ink-2); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fv-key-peak, .fv-key-book { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-left: 6px; }
+.fv-key-peak { outline: 2px solid var(--ink); background: var(--status-critical); }
+.fv-key-book { border-bottom: 2px solid var(--ink); }
+
+/* Owner action cards: one number each, high contrast. */
+.fv-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.fv-act { background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--fv, var(--ink)); border-radius: var(--radius-sm); padding: 16px; display: grid; gap: 6px; }
+.fv-act .fv-big { font-size: 1.9rem; }
+.fv-alerts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.fv-alerts li { background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--status-critical); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 1.02rem; min-height: 48px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+
+/* Progressive disclosure */
+details.advanced { margin-top: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+details.advanced > summary { cursor: pointer; min-height: 48px; padding: 12px 18px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; gap: 12px; list-style: none; }
+details.advanced > summary::-webkit-details-marker { display: none; }
+details.advanced > summary::after { content: "Show"; font-weight: 600; font-size: 0.85rem; color: var(--brand-ink); }
+details.advanced[open] > summary::after { content: "Hide"; }
+details.advanced > summary .hi { font-weight: 500; }
+.advanced-body { padding: 0 18px 18px; }
+.kpi-est-wrap { position: relative; display: grid; }
+.kpi-est-wrap > .est-tag { position: absolute; top: 10px; right: 10px; }
+.kpi-est-wrap > .card { border-style: dashed; }
+
+/* Hindi subtitles: hidden until the viewer turns them on. */
+.hi { display: none; }
+:root[data-hindi="on"] .hi { display: block; font-size: 0.86em; font-weight: 500; color: var(--ink-2); }
+:root[data-hindi="on"] .fv-btn .hi, :root[data-hindi="on"] .fv-status .hi { display: inline; }
+.lang-toggle { min-height: 48px; }
+.lang-toggle[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+
+/* Field use on phones: comfortable touch targets for every button and dropdown. */
+@media (pointer: coarse) {
+  .btn, .btn-sm, select.input, .seg button, details.panel > summary, .tool-tabs a, .assistant-suggest button { min-height: 48px; }
+  .btn, .btn-sm, .tool-tabs a { display: inline-flex; align-items: center; justify-content: center; }
+}

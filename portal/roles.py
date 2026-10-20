@@ -3,7 +3,22 @@ from __future__ import annotations
 
 from .core import dataset as ds
 from .core.analytics import compare_models, mean
+from .core.geo import distance_matrix
 from .scenario import hathras_scenario
+
+# Cold storage contacts for the "Contact storage facility" buttons. ColdFlow has no
+# verified directory yet, so this is empty and the workspace says so. Add entries as
+# {"name", "block_id", "phone"} (from the UP Horticulture cold storage registry or the
+# operators themselves) and call/WhatsApp buttons appear for that block.
+FACILITY_CONTACTS: list[dict] = []
+
+# Traffic-light wording for block status (levels come from core.storage.block_strain).
+SPACE_STATUS = {
+    "good": {"light": "green", "label": "Space available", "hi": "जगह उपलब्ध"},
+    "warning": {"light": "yellow", "label": "Filling up", "hi": "भर रहा है"},
+    "serious": {"light": "red", "label": "Nearly full", "hi": "लगभग भरा"},
+    "critical": {"light": "red", "label": "Full at peak", "hi": "पीक पर भरा"},
+}
 
 ROLES = {
     "owner": {
@@ -62,4 +77,35 @@ def workspace_data(role: str) -> dict:
         "forecast_model": cm["primary"],
         "expansion_t": sim["capacity_needed_threshold_t"] - sc["inputs"]["total_capacity"],
         "spoilage_risk_t": sim["total_overflow_t"],
+        **_field_view(sc, thr),
+    }
+
+
+def _field_view(sc: dict, thr: float) -> dict:
+    """Plain-language view of the scenario for farmers, FPOs and store owners.
+
+    Display only: every number is taken from the scenario as computed; nothing new is modelled.
+    """
+    sim, blocks = sc["simulation"], sc["blocks"]
+    space = []
+    for b in sorted(blocks, key=lambda b: b["name"]):
+        peak = max(b["monthly"], key=lambda m: m["utilisation"])
+        space.append({
+            "id": b["id"], "name": b["name"], "lat": b["lat"], "lng": b["lng"],
+            "level": b["level"], **SPACE_STATUS[b["level"]],
+            "utilisation": b["utilisation"], "spare_t": max(b["gap_t"], 0), "short_t": max(-b["gap_t"], 0),
+            "peak_month": peak["month"], "nearest": b["nearest_headroom"][:2],
+            "contacts": [c for c in FACILITY_CONTACTS if c.get("block_id") == b["id"]],
+        })
+    months = [{"month": m["month"], "utilisation": m["utilisation"],
+               "level": "critical" if m["utilisation"] > 1 else "serious" if m["utilisation"] >= thr
+               else "warning" if m["utilisation"] >= thr - 0.15 else "good"} for m in sim["months"]]
+    overflow = sorted([s for s in space if s["short_t"] > 0], key=lambda s: -s["short_t"])
+    return {
+        "space": space,
+        "months": months,
+        "peak_month": sim["peak_month"],
+        "distances": distance_matrix(blocks),
+        "overflow": overflow,
+        "contacts_available": bool(FACILITY_CONTACTS),
     }

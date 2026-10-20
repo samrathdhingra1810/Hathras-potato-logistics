@@ -55,6 +55,10 @@
 
     bind('production', fmt.t(s.production_t));
     bind('season-label', s.inputs.season);
+    // Seasons already harvested but without verified figures are model estimates: mark them.
+    var est = (s.seasons || []).some(function (o) { return o.value === s.inputs.season && /estimate$/.test(o.label); });
+    document.querySelectorAll('[data-est-stat]').forEach(function (el) { el.classList.toggle('is-estimate', est); el.classList.toggle('hatch', est); });
+    document.querySelectorAll('[data-est-tag]').forEach(function (el) { el.hidden = !est; });
     bind('demand', fmt.t(s.demand_t));
     bind('ratio-label', fmt.pct(s.inputs.ratio, 0) + ' of harvest');
     bind('coverage', fmt.pct(s.district_coverage, 1));

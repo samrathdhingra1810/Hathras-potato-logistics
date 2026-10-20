@@ -59,8 +59,9 @@
       <div class="need"><span>Capacity needed for this season:</span><strong class="tabular" data-bind="need">{{ sim.capacity_needed_t|tonnes }}</strong><span>to avoid any deficit ·</span><strong class="tabular" data-bind="need-thr">{{ sim.capacity_needed_threshold_t|tonnes }}</strong><span>to stay under your alert threshold</span></div>
 
       <dl class="mini-stats" style="margin:0">
-        <div><dt>Harvest</dt><dd data-bind="production">{{ s.production_t|tonnes }}</dd><dd data-bind="season-label">{{ i.season }}</dd></div>
-        <div><dt>Storage demand</dt><dd data-bind="demand">{{ s.demand_t|tonnes }}</dd><dd data-bind="ratio-label">{{ i.ratio|pct(0) }} of harvest</dd></div>
+        {% set est = (s.seasons|selectattr('value', 'equalto', i.season)|first).label.endswith('estimate') %}
+        <div data-est-stat{% if est %} class="is-estimate hatch"{% endif %}><dt>Harvest</dt><dd data-bind="production">{{ s.production_t|tonnes }}</dd><dd><span data-bind="season-label">{{ i.season }}</span> <span class="est-tag" data-est-tag{% if not est %} hidden{% endif %}>ESTIMATED (Pending Actuals)</span></dd></div>
+        <div data-est-stat{% if est %} class="is-estimate hatch"{% endif %}><dt>Storage demand</dt><dd data-bind="demand">{{ s.demand_t|tonnes }}</dd><dd data-bind="ratio-label">{{ i.ratio|pct(0) }} of harvest</dd></div>
         <div><dt>District coverage</dt><dd data-bind="coverage">{{ s.district_coverage|pct(1) }}</dd><dd data-bind="gap"></dd></div>
         <div><dt>Your facility covers</dt><dd data-bind="facility-cov">{{ s.facility_coverage|pct(2) }}</dd><dd>of regional demand</dd></div>
       </dl>

@@ -34,6 +34,7 @@
         <li><span class="sw" style="--c:var(--series-1)"></span>Actual</li>
         <li><span class="sw dash" style="--c:var(--series-1)"></span>{{ forecast_word|capitalize }}</li>
         <li><span class="sw band" style="--c:var(--band-1)"></span>95% interval</li>
+        {% if harvested_forecasts %}<li><span class="sw hatch-sw"></span>Shaded: ESTIMATED (Pending Actuals)</li>{% endif %}
       </ul>
       <div class="chart-box short"><canvas id="hero-chart" aria-label="Production by season with forecast"></canvas></div>
       <dl class="mini-stats" style="margin:14px 0 0">

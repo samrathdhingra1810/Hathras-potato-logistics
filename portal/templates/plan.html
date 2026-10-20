@@ -11,6 +11,7 @@
       <div class="crumbs">{% if g.user %}<a href="{{ url_for('dashboard') }}">Dashboard</a> / {% endif %}Plan your data</div>
       <h1>Plan with your own data</h1>
       <p class="lead" style="margin:0;max-width:720px">Enter a few seasons for any district or cold store. ColdFlow forecasts the next two harvests and checks them against your storage capacity month by month.</p>
+      <p class="no-print" style="margin:14px 0 0"><button class="btn btn-ghost lang-toggle" type="button" data-hindi-toggle aria-pressed="false"><span lang="hi">हिंदी</span>&nbsp;subtitles</button></p>
     </div>
   </div>
 </section>
@@ -50,7 +51,7 @@
   <div class="split split-plan">
     <div class="stack no-print">
       <div class="card">
-        <div class="card-head"><div><h2>Your seasons</h2><p>Area in hectares, production in tonnes. At least 3 consecutive seasons.</p></div></div>
+        <div class="card-head"><div><h2>Your seasons<span class="hi" lang="hi">आपके सीज़न</span></h2><p>Area in hectares, production in tonnes. At least 3 consecutive seasons.</p></div></div>
         <div class="table-wrap">
           <table class="table data-table">
             <thead><tr><th>Season</th><th class="r">Area (ha)</th><th class="r">Production (t)</th><th class="r">Yield</th><th><span class="sr-only">Remove</span></th></tr></thead>
@@ -65,7 +66,7 @@
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h2>Storage settings</h2><p>For your district or facility</p></div></div>
+        <div class="card-head"><div><h2>Storage settings<span class="hi" lang="hi">भंडारण सेटिंग (भंडारण क्षमता)</span></h2><p>For your district or facility</p></div></div>
         <div class="card-body">
           <div class="form-field">
             <label for="capacity">Cold storage capacity (t)</label>
@@ -84,7 +85,7 @@
             <input class="num-input" id="facility" type="number" min="1" step="500" inputmode="numeric">
           </div>
         </div>
-        <details class="panel" open>
+        <details class="panel">
           <summary>What-if &amp; holding costs</summary>
           <div>{% with w = {'yield_shock': 0, 'extra_capacity': 0, 'tariff_change': 0, 'tariff': 7.5, 'kwh': 9}, extra_max = 500000, extra_step = 1000 %}{% include "partials/whatif.html" %}{% endwith %}</div>
         </details>
@@ -121,13 +122,6 @@
           </div>
         </div>
 
-        <dl class="mini-stats" style="margin:0">
-          <div><dt>Latest harvest</dt><dd data-bind="latest"></dd><dd data-bind="latest-season"></dd></div>
-          <div><dt>YoY change</dt><dd data-bind="yoy"></dd><dd>vs previous season</dd></div>
-          <div><dt>Annual growth</dt><dd data-bind="cagr"></dd><dd data-bind="cagr-span"></dd></div>
-          <div><dt>Average yield</dt><dd data-bind="yield"></dd><dd>across your seasons</dd></div>
-        </dl>
-
         <div class="alert lvl-good" id="alert"><i aria-hidden="true" data-bind="alert-icon">●</i><div><strong data-bind="alert-title"></strong><p data-bind="alert-body"></p></div></div>
 
         <div class="need"><span>Capacity needed:</span><strong class="tabular" data-bind="need"></strong><span>to avoid any deficit ·</span><strong class="tabular" data-bind="need-thr"></strong><span>to stay under your threshold</span></div>
@@ -138,6 +132,16 @@
           <div><dt>Capacity coverage</dt><dd data-bind="coverage"></dd><dd data-bind="gap"></dd></div>
           <div><dt>One facility covers</dt><dd data-bind="facility-cov"></dd><dd>of storage demand</dd></div>
         </dl>
+
+        <details class="advanced" data-advanced>
+          <summary>Advanced Data &amp; Methodology<span class="hi" lang="hi">विस्तृत आँकड़े और पद्धति</span></summary>
+          <div class="advanced-body stack">
+            <dl class="mini-stats" style="margin:0">
+              <div><dt>Latest harvest</dt><dd data-bind="latest"></dd><dd data-bind="latest-season"></dd></div>
+              <div><dt>YoY change</dt><dd data-bind="yoy"></dd><dd>vs previous season</dd></div>
+              <div><dt>Annual growth</dt><dd data-bind="cagr"></dd><dd data-bind="cagr-span"></dd></div>
+              <div><dt>Average yield</dt><dd data-bind="yield"></dd><dd>across your seasons</dd></div>
+            </dl>
 
         <div class="card">
           <div class="card-head"><div><h2>Stock vs capacity by month</h2><p>Peak loading shaded</p></div></div>
@@ -174,6 +178,7 @@
               <li><span class="sw" style="--c:var(--series-1)"></span>Your data</li>
               <li><span class="sw dash" style="--c:var(--series-1)"></span>Forecast</li>
               <li><span class="sw band" style="--c:var(--band-1)"></span>95% interval</li>
+              <li data-est-legend hidden><span class="sw hatch-sw"></span>Shaded: ESTIMATED (Pending Actuals), seasons already harvested</li>
             </ul>
             <div class="chart-box"><canvas id="forecast-chart" aria-label="Your seasons with forecast"></canvas></div>
           </div>
@@ -185,6 +190,8 @@
           </div>
         </div>
         <p class="xs muted" style="margin:0">Results are only as good as the figures entered. Forecasts are a straight-line trend and don't model weather or prices. <a href="{{ url_for('about') }}#methodology">Methodology</a></p>
+          </div>
+        </details>
       </div>
     </div>
   </div>
@@ -201,4 +208,5 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script src="{{ url_for('static', filename='js/plan.js') }}"></script>
+<script src="{{ url_for('static', filename='js/workspace.js') }}"></script>
 {% endblock %}

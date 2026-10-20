@@ -178,8 +178,7 @@ class SeasonStatusTests(unittest.TestCase):
         checks = {
             "/": ["2024-25: 1.40M T estimate"],
             "/hathras": ["<dt>2024-25 estimate</dt>", "2024-25 and 2025-26 estimates"],
-            "/tools/forecast": ["Estimated production · 2024-25", "Estimated yield · 2025-26", "Estimates table",
-                                "Estimate · past season, pending verified actuals"],
+            "/tools/forecast": ["Estimated production", "Estimated yield", "Recorded season and estimates"],
             "/tools/planner": ["2024-25 estimate", "2025-26 estimate"],
             "/services": ["2024-25 and 2025-26 estimates"],
             "/workspace/fpo": ["Harvest estimate (past season)"],
@@ -191,6 +190,21 @@ class SeasonStatusTests(unittest.TestCase):
             # No page may call these past seasons forecasts.
             self.assertFalse(re.search(r"(2024-25|2025-26)[^<]{0,12}\bforecasts?\b", html), path)
             self.assertNotIn("Projected production · 2024-25", html)
+
+    def test_estimates_are_visually_tagged(self):
+        """Recorded seasons carry a 'Verified actual' tag; past modelled seasons the ESTIMATED tag."""
+        from portal import create_app
+
+        c = create_app({"TESTING": True}).test_client()
+        tag = "ESTIMATED (Pending Actuals)"
+        fc = c.get("/tools/forecast").get_data(as_text=True)
+        self.assertEqual(fc.count('class="season-card is-estimate"'), 2)
+        self.assertEqual(fc.count('class="is-estimate-row"'), 2)
+        self.assertIn("Shaded seasons: " + tag, fc)                       # chart legend
+        est = c.get("/tools/planner?season=2024-25").get_data(as_text=True)
+        self.assertIn('<span class="est-tag" data-est-tag>' + tag, est)
+        actual = c.get("/tools/planner?season=2023-24").get_data(as_text=True)
+        self.assertIn('<span class="est-tag" data-est-tag hidden>', actual)
 
 
 if __name__ == "__main__":
