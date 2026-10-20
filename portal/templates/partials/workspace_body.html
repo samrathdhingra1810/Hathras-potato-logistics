@@ -8,7 +8,7 @@
     {{ m.kpi('Unserved demand', sim.total_overflow_t|tonnes, None, None, None, 'produce looking for space') }}
   {% elif ws.role == 'fpo' %}
     {{ m.kpi('Book space before', ws.book_before or '—', None, None, None, 'when district storage passes the watch level') }}
-    {{ m.kpi('Next harvest forecast', ws.next_forecast.production_t|tonnes, None, None, None, ws.next_forecast.season ~ ' · ' ~ ('smoothing' if ws.forecast_model == 'smoothing' else 'linear') ~ ' model') }}
+    {{ m.kpi('Next harvest forecast', ws.next_forecast.production_t|tonnes, None, None, None, ws.next_forecast.season ~ ' · linear trend, 95% range ' ~ (ws.next_forecast.production_lower|tonnes) ~ '–' ~ (ws.next_forecast.production_upper|tonnes)) }}
     {{ m.kpi('5-year average harvest', ws.five_year_avg_t|tonnes, None, None, None, 'for comparison') }}
     {{ m.kpi('Without cold storage', sim.total_overflow_t|tonnes, None, None, None, 'risk of distress sales') }}
   {% else %}
@@ -24,13 +24,13 @@
     {% if ws.role == 'fpo' %}
       <div class="card-head"><div><h3>Where storage is still available</h3><p>Blocks with the most spare capacity at peak</p></div></div>
       <div class="table-wrap"><table class="table"><thead><tr><th>Block</th><th class="r">Spare</th><th class="r">Peak use</th></tr></thead><tbody>
-        {% for b in ws.most_spare %}<tr><td><strong>{{ b.name }}</strong></td><td class="r">{{ b.gap_t|tonnes }}</td><td class="r">{{ b.utilisation|pct(0) }}</td></tr>
+        {% for b in ws.most_spare %}<tr><td><strong>{{ b.name }}</strong></td><td class="r">{{ b.gap_t|tonnes }}</td><td class="r">{{ b.utilisation|pct(1) }}</td></tr>
         {% else %}<tr><td colspan="3" class="muted">No block has spare capacity at peak.</td></tr>{% endfor %}
       </tbody></table></div>
     {% else %}
       <div class="card-head"><div><h3>Highest shortage risk</h3><p>Blocks with the most strain at peak</p></div></div>
       <div class="table-wrap"><table class="table"><thead><tr><th>Block</th><th class="r">Peak use</th><th class="r">Gap</th></tr></thead><tbody>
-        {% for b in ws.most_strained %}<tr><td><strong>{{ b.name }}</strong></td><td class="r">{{ b.utilisation|pct(0) }}</td><td class="r">{{ b.gap_t|tonnes }}</td></tr>{% endfor %}
+        {% for b in ws.most_strained %}<tr><td><strong>{{ b.name }}</strong></td><td class="r">{{ b.utilisation|pct(1) }}</td><td class="r">{{ b.gap_t|tonnes }}</td></tr>{% endfor %}
       </tbody></table></div>
     {% endif %}
   </div>

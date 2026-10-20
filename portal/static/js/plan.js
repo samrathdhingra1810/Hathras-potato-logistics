@@ -205,10 +205,16 @@
     bind('need-thr', fmt.t(sim.capacity_needed_threshold_t));
 
     renderFcTable();
-    var bt = a.forecast_compare.backtest;
-    bind('fc-backtest', bt.holdout ? 'Backtest on ' + bt.seasons.join(' and ') + ': linear ' + fmt.pct(bt.linear_mape, 1) + ' vs smoothing ' +
-      fmt.pct(bt.smoothing_mape, 1) + ' average error. ' + (a.forecast_compare.recommended === 'smoothing' ? 'Smoothing' : 'Linear') + ' fitted your history better.'
-      : 'Add at least 5 seasons to compare models on your own history.');
+    var ev = a.forecast_compare.evaluation, as = ev.assessment;
+    if (as.level === 'insufficient') {
+      bind('fc-backtest', as.message);
+    } else {
+      var m = function (k) { return ev.metrics[k]['1']; };
+      bind('fc-backtest', 'Rolling-origin test on your history (' + as.points + ' one-season-ahead forecast' + (as.points === 1 ? '' : 's') +
+        '): linear ' + fmt.pct(m('linear').wape, 1) + ' WAPE (bias ' + fmt.pct(m('linear').bias_pct, 1, true) + '), smoothing ' +
+        fmt.pct(m('holt').wape, 1) + ', naive baseline ' + fmt.pct(m('naive').wape, 1) + '. ' +
+        (as.level === 'indicative' ? 'Too few tests to rank models reliably.' : as.best_label + ' had the lowest error.'));
+    }
 
     storageChart.rebuild();
     forecastChart.rebuild();

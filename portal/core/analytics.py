@@ -118,10 +118,15 @@ def summary(series: list[dict]) -> dict:
 # ---------------------------------------------------------------- exponential smoothing
 
 def _holt_fit(ys, alpha, beta, phi):
-    """Damped-trend Holt smoothing. Returns (level, trend, one-step-ahead residuals)."""
-    level, trend = ys[0], ys[1] - ys[0]
+    """Damped-trend Holt smoothing. Returns (level, trend, one-step-ahead residuals).
+
+    The state is initialised from the first two points (level = y1, trend = y1 − y0),
+    so residuals start at the third point; scoring y1 would reuse it in its own
+    initial trend and flatter the fit.
+    """
+    level, trend = ys[1], ys[1] - ys[0]
     resid = []
-    for y in ys[1:]:
+    for y in ys[2:]:
         pred = level + phi * trend
         resid.append(y - pred)
         new_level = alpha * y + (1 - alpha) * pred
@@ -172,34 +177,18 @@ def forecast_smoothing(series: list[dict], horizon: int = 2) -> dict:
     return {"rows": rows, "params": {k: v["params"] for k, v in fits.items()}}
 
 
-def backtest(series: list[dict], key: str = "production_t", holdout: int = 2) -> dict:
-    """Fit on all but the last `holdout` seasons, forecast them, report mean absolute % error."""
-    if len(series) < holdout + 3:
-        return {"holdout": 0, "linear_mape": None, "smoothing_mape": None}
-    train, test = series[:-holdout], series[-holdout:]
-    lin = forecast_series(train, holdout)["rows"]
-    smo = forecast_smoothing(train, holdout)["rows"]
+def compare_models(series: list[dict], horizon: int = 2) -> dict:
+    """Both forecasts plus a rolling-origin evaluation against simple baselines.
 
-    def mape(rows):
-        return sum(abs(r[key] - t[key]) / t[key] for r, t in zip(rows, test)) / holdout
+    The linear trend stays the primary (headline) model: with only a handful of
+    evaluation points, the evidence is not strong enough to switch models
+    automatically. The evaluation is reported alongside so users can judge.
+    """
+    from .evaluation import evaluate  # local import: evaluation imports this module
 
     return {
-        "holdout": holdout,
-        "seasons": [t["season"] for t in test],
-        "actual": [t[key] for t in test],
-        "linear": [r[key] for r in lin],
-        "smoothing": [r[key] for r in smo],
-        "linear_mape": mape(lin),
-        "smoothing_mape": mape(smo),
+        "linear": forecast_series(series, horizon),
+        "smoothing": forecast_smoothing(series, horizon),
+        "evaluation": evaluate(series, "production_t"),
+        "primary": "linear",
     }
-
-
-def compare_models(series: list[dict], horizon: int = 2) -> dict:
-    """Both forecasts, a production backtest, and which model to prefer on that evidence."""
-    lin = forecast_series(series, horizon)
-    smo = forecast_smoothing(series, horizon)
-    bt = backtest(series)
-    recommended = "linear"
-    if bt["smoothing_mape"] is not None and bt["smoothing_mape"] < bt["linear_mape"]:
-        recommended = "smoothing"
-    return {"linear": lin, "smoothing": smo, "backtest": bt, "recommended": recommended}

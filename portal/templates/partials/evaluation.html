@@ -1,0 +1,61 @@
+{# Rolling-origin evaluation card. Needs `ev` = core.evaluation.evaluate(...) output. #}
+{% set a = ev.assessment %}
+<div class="card" id="evaluation">
+  <div class="card-head">
+    <div>
+      <h2>How accurate has the forecast been?</h2>
+      <p>Rolling-origin test: from each season, forecast the next one or two using only earlier data, then compare with what actually happened.</p>
+    </div>
+    {% if a.level == 'insufficient' %}<span class="tag">Not enough history</span>
+    {% elif a.level == 'indicative' %}<span class="tag">Indicative: {{ a.points }} test{{ '' if a.points == 1 else 's' }}</span>
+    {% else %}<span class="pill">{{ a.points }} tests</span>{% endif %}
+  </div>
+  {% if a.level == 'insufficient' %}
+  <div class="card-body"><p class="muted" style="margin:0">{{ a.message }}</p></div>
+  {% else %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Model</th><th class="r">MAE · 1 season</th><th class="r">WAPE · 1</th><th class="r">Bias · 1</th><th class="r">Skill vs naive</th><th class="r">WAPE · 2 seasons</th><th class="r">Bias · 2</th></tr>
+      </thead>
+      <tbody>
+        {% for mdl in ev.models %}{% set m1 = ev.metrics[mdl.key]['1'] %}{% set m2 = ev.metrics[mdl.key]['2'] %}
+        <tr{% if mdl.key == a.best %} style="background:var(--brand-soft)"{% endif %}>
+          <td><strong>{{ mdl.label }}</strong>{% if mdl.kind == 'baseline' %} <span class="tag">baseline</span>{% endif %}{% if mdl.key == a.best %} <span class="pill">lowest error</span>{% endif %}</td>
+          <td class="r">{{ m1.mae|tonnes if m1 else '—' }}</td>
+          <td class="r">{{ m1.wape|pct(2) if m1 else '—' }}</td>
+          <td class="r">{{ m1.bias_pct|pct(2, True) if m1 else '—' }}</td>
+          <td class="r">{{ (m1.skill_vs_naive|pct(0, True)) if m1 and m1.skill_vs_naive is not none and mdl.key != 'naive' else '—' }}</td>
+          <td class="r">{{ m2.wape|pct(2) if m2 else '—' }}</td>
+          <td class="r">{{ m2.bias_pct|pct(2, True) if m2 else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-body stack" style="border-top:1px solid var(--line)">
+    <div class="notice"><strong>Read with care.</strong> {{ a.message }}</div>
+    {% set lin = ev.metrics.linear['1'] %}
+    <ul class="check-list" style="margin:0">
+      <li>The linear trend (used for the headline forecast) {{ 'beat' if a.linear_beats_naive else 'did not beat' }} the naive “same as last season” baseline and {{ 'beat' if a.linear_beats_drift else 'did not beat' }} the drift baseline on one-season-ahead error.</li>
+      <li>Its bias is {{ lin.bias_pct|pct(2, True) }}: it has {{ 'over' if lin.bias_pct > 0 else 'under' }}-forecast on average{% if lin.bias_pct > 0 %}, so headline figures may run slightly high; for capacity planning that errs on the side of more space{% endif %}.</li>
+      {% if a.best != 'linear' %}<li>{{ a.best_label }} had the lowest error here, but with {{ a.points }} test{{ '' if a.points == 1 else 's' }} the difference is not reliable enough to switch the headline model; both forecasts are shown above.</li>{% endif %}
+    </ul>
+    <details>
+      <summary class="small" style="cursor:pointer;font-weight:600">Every test forecast ({{ ev.rows|length }})</summary>
+      <div class="table-wrap" style="margin-top:8px">
+        <table class="table">
+          <thead><tr><th>Model</th><th>Trained to</th><th>Predicted</th><th class="r">Horizon</th><th class="r">Forecast</th><th class="r">Actual</th><th class="r">Error</th></tr></thead>
+          <tbody>
+            {% for r in ev.rows %}
+            <tr><td>{{ ev.models|selectattr('key', 'equalto', r.model)|map(attribute='label')|first }}</td><td>{{ r.origin }}</td><td>{{ r.target }}</td><td class="r">{{ r.horizon }}</td>
+              <td class="r">{{ r.forecast|num }}</td><td class="r">{{ r.actual|num }}</td><td class="r {{ 'up' if r.error < 0 else 'down' if r.error > 0 else '' }}">{{ '+' if r.error > 0 else '' }}{{ r.error|num }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+    <p class="xs muted" style="margin:0">MAE = mean absolute error. WAPE = total absolute error ÷ total actual harvest. Bias = total error ÷ total actual (positive = over-forecast). Skill = how much lower the MAE is than the naive baseline. Minimum training window {{ ev.min_train }} seasons.</p>
+  </div>
+  {% endif %}
+</div>

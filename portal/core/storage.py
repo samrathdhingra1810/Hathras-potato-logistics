@@ -32,26 +32,36 @@ def simulate_storage_year(*, demand_t, capacity_t, intake_profile, release_profi
     Intake follows intake_profile and releases follow release_profile. Intake that
     would exceed capacity is overflow: produce with no cold chain slot. A parallel
     unconstrained stock shows what the season would hold with unlimited capacity.
+
+    Releases are a share of what was actually loaded so far (accepted stock), not of
+    total demand: overflow never entered storage, so it can't be released from it.
+    With the default calendar (loading Feb-Apr, release May-Nov) this releases exactly
+    the stored tonnage and ends the year at zero.
     """
     stock = 0.0
     unconstrained = 0.0
+    loaded = 0.0          # cumulative tonnes accepted into storage
+    loaded_demand = 0.0   # cumulative tonnes that wanted storage
     cumulative_overflow = 0.0
     months = []
     for month in MONTHS:
+        start_stock = stock
         intake = demand_t * intake_profile.get(month, 0)
         accepted = min(intake, max(capacity_t - stock, 0))
         overflow = intake - accepted
         cumulative_overflow += overflow
+        loaded += accepted
+        loaded_demand += intake
 
         stock += accepted
         unconstrained += intake
         peak_stock = stock  # end of loading, before this month's releases
         demanded = unconstrained
 
-        scheduled = demand_t * release_profile.get(month, 0)
-        release = min(stock, scheduled)
+        share = release_profile.get(month, 0)
+        release = min(stock, loaded * share)
         stock -= release
-        unconstrained -= min(unconstrained, scheduled)
+        unconstrained -= min(unconstrained, loaded_demand * share)
 
         utilisation = demanded / capacity_t if capacity_t > 0 else math.inf
         months.append({
@@ -60,6 +70,8 @@ def simulate_storage_year(*, demand_t, capacity_t, intake_profile, release_profi
             "accepted": accepted,
             "overflow": overflow,
             "release": release,
+            "start_stock": start_stock,
+            "end_stock": stock,
             "stock": peak_stock,
             "demanded_stock": demanded,
             "unmet": max(demanded - peak_stock, 0) if overflow > 0 else 0.0,
@@ -98,12 +110,16 @@ def block_strain(blocks, *, demand_t, capacity_t, alert_threshold=0.9) -> list[d
 
 
 def holding_economics(sim: dict, *, kwh_per_t_month: float, tariff_rs_kwh: float, tariff_change: float = 0.0) -> dict:
-    """Electricity cost of holding the season's stock (uses each month's average stock)."""
+    """Electricity cost of holding the season's stock.
+
+    Each month's average stock is (opening + closing) / 2, assuming loading and
+    withdrawals are spread evenly through the month.
+    """
     rate = tariff_rs_kwh * (1 + tariff_change)
     monthly = []
     total_t_months = 0.0
     for m in sim["months"]:
-        avg = max(m["stock"] - m["release"] / 2, 0.0)
+        avg = max((m["start_stock"] + m["end_stock"]) / 2, 0.0)
         total_t_months += avg
         monthly.append({"month": m["month"], "avg_stock_t": avg, "cost_rs": avg * kwh_per_t_month * rate})
     total = total_t_months * kwh_per_t_month * rate

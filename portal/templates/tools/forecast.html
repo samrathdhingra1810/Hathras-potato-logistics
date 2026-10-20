@@ -51,23 +51,6 @@
     </div>
 
     <div class="stack">
-      {% set bt = compare.backtest %}
-      <div class="card">
-        <div class="card-head"><div><h3>Which model to trust?</h3><p>Backtest: fit on {{ series[0].season }}–{{ series[-(bt.holdout + 1)].season }}, predict {{ bt.seasons|join(' and ') }}</p></div>
-          <span class="pill">{{ 'Exp. smoothing' if compare.recommended == 'smoothing' else 'Linear trend' }} fits better</span></div>
-        <div class="table-wrap">
-          <table class="table">
-            <thead><tr><th>Season</th><th class="r">Actual</th><th class="r">Linear</th><th class="r">Smoothing</th></tr></thead>
-            <tbody>
-              {% for k in range(bt.holdout) %}
-              <tr><td><strong>{{ bt.seasons[k] }}</strong></td><td class="r">{{ bt.actual[k]|tonnes }}</td><td class="r">{{ bt.linear[k]|tonnes }}</td><td class="r">{{ bt.smoothing[k]|tonnes }}</td></tr>
-              {% endfor %}
-              <tr><td>Mean abs. error</td><td></td><td class="r"><strong>{{ bt.linear_mape|pct(2) }}</strong></td><td class="r"><strong>{{ bt.smoothing_mape|pct(2) }}</strong></td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="xs muted" style="padding:0 20px 14px;margin:0">With only six seasons, both errors are small and close; treat this as a sanity check, not proof. ARIMA-style models need far more history to be reliable.</p>
-      </div>
       <div class="card">
         <div class="card-head"><div><h3>Model statistics</h3><p>One straight-line fit per metric, n = {{ models.production_t.n }}</p></div></div>
         <div class="table-wrap">
@@ -101,6 +84,7 @@
       <div class="notice">Six data points give a wide interval. Plan to the range, not the point. Weather, prices and seed supply are not modelled. <a href="{{ url_for('about') }}#methodology">Methodology →</a></div>
     </div>
   </div>
+  {% with ev = compare.evaluation %}{% include "partials/evaluation.html" %}{% endwith %}
 </div>
 {{ m.page_data({'series': series, 'forecast': forecast, 'smoothing': compare.smoothing}) }}
 {% endblock %}

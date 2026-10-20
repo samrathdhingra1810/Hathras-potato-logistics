@@ -153,7 +153,7 @@ def home_chips(scenario: dict, forecast: dict) -> list[dict]:
 
     def full(bid):
         b = blocks[bid]
-        return {"icon": "📍", "text": f"{b['name']} ({b['utilisation'] * 100:.0f}% full)",
+        return {"icon": "📍", "text": f"{b['name']} ({b['utilisation'] * 100:.1f}% full)",
                 "tone": "bad" if b["utilisation"] > 1 else "warn" if b["utilisation"] >= 0.75 else "good"}
 
     sim = scenario["simulation"]

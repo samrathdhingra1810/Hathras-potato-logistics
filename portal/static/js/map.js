@@ -65,7 +65,7 @@
     var rows = scenario.blocks.slice().sort(function (a, b) { return utilFor(b) - utilFor(a); }).map(function (b) {
       var u = utilFor(b), lv = levelFor(u);
       return '<tr data-id="' + b.id + '"' + (selected === b.id ? ' class="sel"' : '') + '><td><strong>' + esc(b.name) + '</strong></td><td class="r">' +
-        t(b.demand_t) + '</td><td class="r">' + t(b.capacity_t) + '</td><td class="r">' + pct(u, 0) +
+        t(b.demand_t) + '</td><td class="r">' + t(b.capacity_t) + '</td><td class="r">' + pct(u, 1) +
         '</td><td class="r"><span class="badge lvl-' + lv + '"><i aria-hidden="true">' + ICONS[lv] + '</i>' + LABELS[lv] + '</span></td></tr>';
     });
     document.getElementById('block-rows').innerHTML = rows.join('');
@@ -81,7 +81,7 @@
     card.hidden = false;
     var set = function (k, v) { card.querySelector('[data-bind="' + k + '"]').textContent = v; };
     set('bd-name', b.name + ' block');
-    set('bd-sub', 'Peak ' + pct(b.utilisation, 0) + ' of local capacity · ' + LABELS[b.level]);
+    set('bd-sub', 'Peak ' + pct(b.utilisation, 1) + ' of local capacity · ' + LABELS[b.level]);
     set('bd-demand', t(b.demand_t));
     set('bd-capacity', t(b.capacity_t));
     set('bd-gap', b.gap_t >= 0 ? t(b.gap_t) + ' spare' : t(-b.gap_t) + ' short');

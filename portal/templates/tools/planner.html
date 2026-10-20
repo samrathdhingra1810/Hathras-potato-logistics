@@ -77,6 +77,38 @@
         </div>
       </div>
 
+      <div class="card">
+        <div class="card-head"><div><h3>What this means in practice</h3><p>Derived from the figures above</p></div>
+          <button type="button" class="btn btn-primary btn-sm no-print" id="save-scenario">+ Save as scenario</button></div>
+        <div class="card-body"><ul class="check-list" id="impl-list" style="margin:0"></ul></div>
+      </div>
+
+      <div class="card" id="redistribution">
+        <div class="card-head">
+          <div><h3>Redistribution plan</h3><p>Optimised with a linear program: store as much as possible, then haul as little as possible</p></div>
+          <span class="tag">Demo on modelled data</span>
+        </div>
+        <div class="card-body">
+          <div class="grid no-print" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px">
+            <div class="form-field" style="margin:0"><label for="max_km">Max haul</label>
+              <select class="input" id="max_km"><option value="0">No limit</option><option value="10">10 km</option><option value="15">15 km</option><option value="25" selected>25 km</option><option value="40">40 km</option></select></div>
+            <div class="form-field" style="margin:0"><label for="road_factor">Road factor</label>
+              <input class="num-input" id="road_factor" type="number" min="1" max="3" step="0.05" value="1"></div>
+            <div class="form-field" style="margin:0"><label for="rate">Freight rate (₹/t-km)</label>
+              <input class="num-input" id="rate" type="number" min="0" step="0.1" placeholder="Your rate"></div>
+          </div>
+          <dl class="mini-stats" style="margin:0 0 14px">
+            <div><dt>Stored with redistribution</dt><dd data-bind="al-stored">—</dd><dd data-bind="al-local"></dd></div>
+            <div><dt>Extra stored by moving</dt><dd data-bind="al-gain">—</dd><dd data-bind="al-moved"></dd></div>
+            <div><dt>Haul</dt><dd data-bind="al-tkm">—</dd><dd data-bind="al-avg"></dd></div>
+            <div><dt>Freight estimate</dt><dd data-bind="al-cost">—</dd><dd data-bind="al-cost-note">enter a rate</dd></div>
+          </dl>
+          <div class="table-wrap"><table class="table" id="al-transfers"></table></div>
+          <p class="small" style="margin:12px 0 0" data-bind="al-left"></p>
+          <p class="xs muted" style="margin:8px 0 0" data-bind="al-basis"></p>
+        </div>
+      </div>
+
       {% include "partials/economics.html" %}
 
       <div class="card">
@@ -89,6 +121,13 @@
         </div>
       </div>
     </div>
+  </div>
+  <div class="card" id="compare-card" hidden>
+    <div class="card-head">
+      <div><h2>Compare scenarios</h2><p>Saved in this browser. The first column is the reference; other columns show the change against it.</p></div>
+      <button type="button" class="btn btn-ghost btn-sm no-print" id="clear-scenarios">Clear all</button>
+    </div>
+    <div class="table-wrap"><table class="table" id="compare-table"></table></div>
   </div>
 </div>
 {{ m.page_data({'scenario': s, 'defaults': {'capacity': 950000, 'ratio': 0.75, 'threshold': 0.9, 'facility': 10000, 'yield_shock': 0, 'extra_capacity': 0, 'tariff_change': 0, 'tariff': 7.5, 'kwh': 9}}) }}

@@ -165,7 +165,7 @@ def analyse(payload: dict) -> dict:
         "demand_t": demand,
         "facility_coverage": facility_coverage(v["facility"], demand),
         "district_coverage": total_capacity / demand if demand else None,
-        "facilities_to_close_gap": max(demand - total_capacity, 0) / v["facility"],
+        "facilities_to_close_gap": sim["capacity_gap_t"] / v["facility"],
         "simulation": sim,
         "warnings": v["warnings"],
     }

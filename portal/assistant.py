@@ -132,9 +132,13 @@ def tool_hathras_overview(_args: dict) -> dict:
         "forecast_r2_production": _r(fc["models"]["production_t"]["r2"], 3),
         "smoothing_forecast": [{"season": r["season"], "production_t": _r(r["production_t"])}
                                for r in cm["smoothing"]["rows"]],
-        "backtest_mean_abs_error_pct": {"linear": _r(cm["backtest"]["linear_mape"] * 100, 2),
-                                        "smoothing": _r(cm["backtest"]["smoothing_mape"] * 100, 2),
-                                        "better": cm["recommended"]},
+        "rolling_origin_evaluation": {
+            "note": cm["evaluation"]["assessment"]["message"],
+            "one_season_ahead": {k: {"mae_t": _r(v["1"]["mae"]), "wape_pct": _r(v["1"]["wape"] * 100, 2),
+                                     "bias_pct": _r(v["1"]["bias_pct"] * 100, 2), "n": v["1"]["n"]}
+                                 for k, v in cm["evaluation"]["metrics"].items() if v.get("1")},
+            "headline_model": "linear",
+        },
         "default_storage_outlook": {
             "season": sc["inputs"]["season"],
             "assumptions": {"capacity_t": ds.DEFAULT_REGIONAL_CAPACITY_T, "storage_share": ds.DEFAULT_STORAGE_RATIO,

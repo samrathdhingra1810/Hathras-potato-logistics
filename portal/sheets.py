@@ -226,6 +226,17 @@ def report_xlsx(title: str, analysis: dict, *, blocks=None) -> bytes:
                 frows.append([name, r["season"], r["production_t"], r["production_lower"], r["production_upper"], r["yield_kg_ha"]])
         _sheet_table(wb, "Forecast", ["Model", "Season", "Production (t)", "95% low", "95% high", "Yield (kg/ha)"], frows,
                      {"C": "#,##0", "D": "#,##0", "E": "#,##0", "F": "#,##0"})
+        ev = cm["evaluation"]
+        erows = []
+        for mdl in ev["models"]:
+            for h in ("1", "2"):
+                m = ev["metrics"][mdl["key"]].get(h)
+                if m:
+                    erows.append([mdl["label"], int(h), m["n"], m["mae"], m["wape"], m["bias_pct"], m.get("skill_vs_naive")])
+        ws_ev = _sheet_table(wb, "Evaluation", ["Model", "Horizon (seasons)", "Tests", "MAE (t)", "WAPE", "Bias", "Skill vs naive"],
+                             erows, {"D": "#,##0", "E": "0.00%", "F": "+0.00%;-0.00%", "G": "+0%;-0%"})
+        ws_ev.append([])
+        ws_ev.append([ev["assessment"]["message"]])
 
     _sheet_table(wb, "Monthly storage", ["Month", "Intake (t)", "Release (t)", "Stock held (t)", "Unmet (t)", "Demand vs capacity"],
                  [[m["month"], m["intake"], m["release"], m["stock"], m["unmet"], m["utilisation"]] for m in sim["months"]],

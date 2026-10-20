@@ -49,7 +49,7 @@ def workspace_data(role: str) -> dict:
     watch = next((m for m in sim["months"] if m["utilisation"] >= thr - 0.15), None)
     cm = compare_models(ds.PRODUCTION_SERIES)
     five_yr = mean(r["production_t"] for r in ds.PRODUCTION_SERIES[-5:])
-    next_fc = cm[cm["recommended"]]["rows"][0]
+    next_fc = cm[cm["primary"]]["rows"][0]
     return {
         "role": role,
         "meta": ROLES[role],
@@ -59,7 +59,7 @@ def workspace_data(role: str) -> dict:
         "book_before": watch["month"] if watch else None,
         "five_year_avg_t": five_yr,
         "next_forecast": next_fc,
-        "forecast_model": cm["recommended"],
+        "forecast_model": cm["primary"],
         "expansion_t": sim["capacity_needed_threshold_t"] - sc["inputs"]["total_capacity"],
         "spoilage_risk_t": sim["total_overflow_t"],
     }

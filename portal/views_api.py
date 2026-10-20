@@ -9,6 +9,7 @@ from . import assistant, db, sheets
 from .core import dataset as ds
 from .core.analytics import forecast_series, with_yoy
 from .core.custom import InputError, analyse, validate
+from .core.allocation import allocate
 from .scenario import hathras_scenario, num_arg
 
 MAX_PLANS_PER_USER = 50
@@ -50,6 +51,25 @@ def init_app(app):
     def api_scenario():
         source = (request.get_json(silent=True) or {}) if request.method == "POST" else request.args
         return jsonify(hathras_scenario(source))
+
+    @app.get("/api/allocation")
+    def api_allocation():
+        """Peak-season redistribution between Hathras blocks (modelled block split, straight-line km)."""
+        sc = hathras_scenario(request.args)
+        max_km = num_arg(request.args, "max_km", 0, 0, 500) or None
+        road_factor = num_arg(request.args, "road_factor", 1.0, 1.0, 3.0)
+        rate = num_arg(request.args, "rate", 0, 0, 10_000)
+        nodes = [{"id": b["id"], "name": b["name"], "lat": b["lat"], "lng": b["lng"],
+                  "demand_t": b["demand_t"], "capacity_t": b["capacity_t"]} for b in sc["blocks"]]
+        out = allocate(nodes, max_km=max_km, road_factor=road_factor)
+        if out.get("ok"):
+            out["rate_rs_per_tkm"] = rate or None
+            out["freight_cost_rs"] = out["tonne_km"] * rate if rate else None
+            out["season"] = sc["inputs"]["season"]
+            out["data_basis"] = ("Demo on modelled data: block demand and capacity use the assumed block split; "
+                                 "distances are straight-line between block HQs" +
+                                 (f" × road factor {road_factor:g}" if road_factor != 1 else "") + ".")
+        return jsonify(out), (200 if out.get("ok") else 503)
 
     @app.post("/api/analyse")
     def api_analyse():

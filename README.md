@@ -8,7 +8,7 @@ Cold storage planning for every harvest. ColdFlow forecasts potato production, s
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/python run.py          # http://127.0.0.1:5000
-.venv/bin/python -m unittest discover -s tests -t .
+.venv/bin/python -m unittest discover -s tests -t .   # 56 tests: engine, calculations trace, evaluation, allocation, app
 ```
 
 ## Pages
@@ -36,6 +36,7 @@ python3 -m venv .venv
 | `GET` or `POST /api/scenario` | `season, capacity, ratio, threshold, facility` → full storage simulation and block strain |
 | `POST /api/analyse` | Your own data → forecast, simulation and warnings (422 with `errors` if invalid) |
 | `GET/POST /api/plans`, `PUT /api/plans/<id>` | Saved plans for the signed-in user (needs `X-CSRF-Token`) |
+| `GET /api/allocation` | Redistribution plan for a Hathras scenario (`max_km`, `road_factor`, `rate`) |
 | `POST /api/assistant` | `{messages, context}` → assistant reply (`mode`: `ai` or `offline`) |
 | `GET /data/production.csv` | District series as CSV |
 
@@ -61,6 +62,16 @@ react-version/          Earlier React/Vite dashboard, kept for reference
 ## Data provenance
 
 The district area, production and yield series (2018-19 to 2023-24) is as supplied in the project brief; cross-check it against UP Directorate of Horticulture or DES releases. District cold storage capacity (950,000 t), the monthly intake and release profiles, and the block split are **planning assumptions**, labelled as such on the site.
+
+## Forecast evaluation
+
+`portal/core/evaluation.py` runs a rolling-origin (expanding-window) evaluation: from every origin with at least 3 training seasons, each model forecasts 1 and 2 seasons ahead using only earlier data. Models: linear trend (headline), damped Holt smoothing, and baselines (naive, drift, historical mean). Metrics: MAE, WAPE, bias (mean and % of actual), skill vs naive. Results are on `/tools/forecast#evaluation`, in the plan page for user data, in the Excel report (Evaluation sheet) and in the assistant's overview tool.
+
+Current Hathras results (6 seasons, 3 one-season-ahead tests, computed by the code, labelled *indicative*): linear trend WAPE 1.22% with +1.22% bias (it over-forecast each recent season); damped smoothing 0.74%; drift 1.39%; naive 1.59%; mean 5.11%. Too few tests to switch the headline model; both forecasts are shown.
+
+## Redistribution optimiser
+
+`portal/core/allocation.py`: two-stage LP with SciPy/HiGHS (maximise tonnes stored, then minimise tonne-km), optional max haul and road factor; `GET /api/allocation`. Runs on the modelled block split and straight-line distances, so it is labelled a demo. Freight cost only with a user-supplied rate.
 
 ## Feature notes
 

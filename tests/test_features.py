@@ -8,7 +8,7 @@ from openpyxl import load_workbook
 
 from portal import create_app
 from portal.core import dataset as ds
-from portal.core.analytics import backtest, compare_models, holt_damped
+from portal.core.analytics import compare_models, holt_damped
 from portal.core.custom import analyse, hathras_example
 from portal.core.geo import haversine_km
 from portal.scenario import hathras_scenario
@@ -21,13 +21,12 @@ class EngineFeatureTests(unittest.TestCase):
         self.assertGreater(out["rows"][1]["value"], out["rows"][0]["value"])
         self.assertLess(out["rows"][0]["lower"], out["rows"][0]["value"])
 
-    def test_model_comparison_and_backtest(self):
+    def test_model_comparison_uses_rolling_evaluation(self):
         cm = compare_models(ds.PRODUCTION_SERIES)
-        self.assertIn(cm["recommended"], ("linear", "smoothing"))
-        self.assertEqual(cm["backtest"]["seasons"], ["2022-23", "2023-24"])
-        self.assertLess(cm["backtest"]["linear_mape"], 0.05)
-        short = backtest(ds.PRODUCTION_SERIES[:3])
-        self.assertEqual(short["holdout"], 0)
+        self.assertEqual(cm["primary"], "linear")
+        ev = cm["evaluation"]
+        self.assertEqual(ev["assessment"]["level"], "indicative")  # 3 one-step tests only
+        self.assertEqual(ev["assessment"]["points"], 3)
 
     def test_whatif_levers(self):
         base = hathras_scenario({})
@@ -81,7 +80,7 @@ class FeatureRouteTests(unittest.TestCase):
         e = self.c.post("/api/export", json={"kind": "hathras", "params": {"extra_capacity": 50000}})
         self.assertEqual(e.status_code, 200)
         wb = load_workbook(io.BytesIO(e.data))
-        self.assertEqual(wb.sheetnames, ["Summary", "Seasons", "Forecast", "Monthly storage", "Blocks", "Assumptions"])
+        self.assertEqual(wb.sheetnames, ["Summary", "Seasons", "Forecast", "Evaluation", "Monthly storage", "Blocks", "Assumptions"])
         bad = hathras_example(); bad["series"] = []
         self.assertEqual(self.c.post("/api/export", json={"kind": "plan", "payload": bad}).status_code, 422)
 
