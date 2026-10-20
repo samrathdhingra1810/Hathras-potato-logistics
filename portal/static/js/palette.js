@@ -12,7 +12,7 @@
     { group: 'Start', label: 'Ask the assistant', hint: 'AI help with any question', run: function () { window.CFAssistant && window.CFAssistant.open(); }, k: 'ai chat help question' },
     { group: 'Hathras', label: 'Hathras overview', hint: 'District dashboard', run: go(r.hathras), k: 'district home example' },
     { group: 'Hathras', label: 'Capacity planner', hint: 'What-if storage capacity', run: go(r.planner), k: 'storage deficit simulate' },
-    { group: 'Hathras', label: 'Harvest forecast', hint: '2024-25 and 2025-26', run: go(r.forecast), k: 'predict trend regression' },
+    { group: 'Hathras', label: 'Harvest forecast', hint: (window.CF.forecastSeasons || []).join(' and '), run: go(r.forecast), k: 'predict trend regression' },
     { group: 'Hathras', label: 'Production analytics', hint: 'Area, output, yield', run: go(r.production), k: 'yield area chart' },
     { group: 'Hathras', label: 'Block strain map', hint: 'Seven development blocks', run: go(r.map), k: 'gis blocks sasni sadabad sikandra' },
     { group: 'For you', label: 'Cold storage owner workspace', hint: 'Utilisation & holding costs', run: go('/workspace/owner'), k: 'role operator owner power cost' },

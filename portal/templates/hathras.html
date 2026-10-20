@@ -102,7 +102,7 @@
       {% endif %}
       <ul class="check-list">
         <li>Adjust district capacity, storage share and alert threshold</li>
-        <li>Compare this season with the 2024-25 and 2025-26 forecasts</li>
+        <li>Compare this season with the {{ forecast_seasons|join(' and ') }} forecasts</li>
         <li>See how much of regional demand your own facility covers</li>
       </ul>
       <p style="margin-top:20px"><a class="btn btn-primary" href="{{ url_for('tool_planner') }}">Open the planner</a></p>
@@ -118,7 +118,7 @@
     </div>
     <div class="steps">
       <div class="card"><h3>Start from the district record</h3><p>Area, production and yield for every season from 2018-19 to 2023-24.</p></div>
-      <div class="card"><h3>Project the next harvests</h3><p>A linear trend gives the expected 2024-25 and 2025-26 crop, with an honest uncertainty band.</p></div>
+      <div class="card"><h3>Project the seasons after the record</h3><p>A linear trend gives the expected {{ forecast_seasons|join(' and ') }} crop, with an honest uncertainty band.</p></div>
       <div class="card"><h3>Match demand to capacity</h3><p>A month-by-month model loads the crop into cold storage and releases it through the year.</p></div>
       <div class="card"><h3>Act on the gaps</h3><p>Deficit months and strained blocks are flagged, so you can plan space, transport or sales early.</p></div>
     </div>

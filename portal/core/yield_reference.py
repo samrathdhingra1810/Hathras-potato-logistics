@@ -84,3 +84,72 @@ def compare_with_coldflow(rows: list[dict]) -> list[dict]:
             "difference_pct": (r["yield_t_ha"] - cf_t_ha) / cf_t_ha,
         })
     return out
+
+
+# ---------------------------------------------------------------- chronological backtest
+
+BACKTEST_MIN_TRAIN = 8          # seasons in the first training window (8 one-step tests)
+DUPLICATE_COLUMNS = {"Z560", "Z561"}   # copies of Z460 / Z461 in the source
+
+
+def _trend_plus_best(rows, o, suffix):
+    """Yield ~ trend + one Z index, picking the index inside the training window only."""
+    import numpy as np
+    cols = [c for c in z_columns(rows) if c.endswith(suffix) and c not in DUPLICATE_COLUMNS]
+    y = np.array([r["yield_t_ha"] for r in rows[:o]])
+    t = np.arange(o)
+    resid = y - np.polyval(np.polyfit(t, y, 1), t)
+    best = max(cols, key=lambda c: abs(np.corrcoef([r[c] for r in rows[:o]], resid)[0, 1]))
+    a = np.c_[np.ones(o), t, [r[best] for r in rows[:o]]]
+    b = np.linalg.lstsq(a, y, rcond=None)[0]
+    return float(b @ [1, o, rows[o][best]])
+
+
+def _ridge_unweighted(rows, o, lambdas=(0.1, 1, 10, 100, 1000)):
+    """Ridge on trend + all unweighted Z indices; lambda chosen by leave-one-out inside the window."""
+    import numpy as np
+    cols = [c for c in z_columns(rows) if c.endswith("0") and c not in DUPLICATE_COLUMNS]
+    feats = lambda j: [rows[j][c] for c in cols] + [j]
+    y = np.array([r["yield_t_ha"] for r in rows])
+
+    def fit(idx, lam):
+        f = np.array([feats(j) for j in idx])
+        mu, sd = f.mean(0), f.std(0) + 1e-12
+        fs, ym = (f - mu) / sd, y[idx].mean()
+        w = np.linalg.solve(fs.T @ fs + lam * np.eye(fs.shape[1]), fs.T @ (y[idx] - ym))
+        return lambda j: float(ym + ((np.array(feats(j)) - mu) / sd) @ w)
+
+    loo = lambda lam: sum(abs(fit([i for i in range(o) if i != k], lam)(k) - y[k]) for k in range(o))
+    return fit(list(range(o)), min(lambdas, key=loo))(o)
+
+
+WEATHER_MODELS = [
+    ("trend_weather", "Trend + 1 unweighted weather index", lambda rows, o: _trend_plus_best(rows, o, "0")),
+    ("trend_weather_weighted", "Trend + 1 weighted index (leakage-suspect)", lambda rows, o: _trend_plus_best(rows, o, "1")),
+    ("ridge_weather", "Ridge, all unweighted indices", _ridge_unweighted),
+]
+
+
+def backtest(rows: list[dict], min_train: int = BACKTEST_MIN_TRAIN) -> dict:
+    """One-season-ahead rolling-origin MAE (t/ha) for ColdFlow's models vs weather models.
+
+    For each origin o the models see seasons [0, o) only; weather models also use
+    season o's weather indices, which exist once the Oct–Jan growing weeks are over
+    (i.e. before harvest), but never its yield.
+    """
+    from .evaluation import MODELS
+    y = [r["yield_t_ha"] for r in rows]
+    errors = {}
+    for o in range(min_train, len(rows)):
+        for key, _label, _kind, fn in MODELS:
+            errors.setdefault(key, []).append(fn(y[:o], 1)[0] - y[o])
+        for key, _label, fn in WEATHER_MODELS:
+            errors.setdefault(key, []).append(fn(rows, o) - y[o])
+    labels = {k: lab for k, lab, _kind, _f in MODELS} | {k: lab for k, lab, _f in WEATHER_MODELS}
+    naive = sum(abs(e) for e in errors["naive"]) / len(errors["naive"])
+    out = {}
+    for key, errs in errors.items():
+        mae = sum(abs(e) for e in errs) / len(errs)
+        out[key] = {"label": labels[key], "n": len(errs), "mae_t_ha": mae, "skill_vs_naive": 1 - mae / naive,
+                    "bias_t_ha": sum(errs) / len(errs)}
+    return {"targets": (rows[min_train]["season"], rows[-1]["season"]), "models": out}

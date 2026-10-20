@@ -141,6 +141,7 @@
     window.CF = {
       accounts: {{ accounts_enabled|tojson }},
       signedIn: {{ (g.user is not none)|tojson }},
+      forecastSeasons: {{ forecast_seasons|tojson }},
       routes: {
         home: "{{ url_for('home') }}", plan: "{{ url_for('plan') }}", hathras: "{{ url_for('hathras') }}",
         tools: "{{ url_for('tools') }}", production: "{{ url_for('tool_production') }}", forecast: "{{ url_for('tool_forecast') }}",

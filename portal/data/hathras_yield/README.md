@@ -49,7 +49,7 @@ Formulas and the meaning of the last digit (0 = unweighted, 1 = weighted) are fr
 | Types | All numeric; some Z columns mix integers and decimals in the source (harmless) |
 | Yield range | 21.06 – 32.95 t/ha (inside ColdFlow's 10–50 t/ha plausibility band) |
 | Linear trend in yield | −0.14 t/ha per season over 2005-06 → 2020-21 |
-| **Identical columns** | `Z460` = `Z560` and `Z461` = `Z561` in every row. These are interactions of different variable pairs (4×6 and 5×6), so they should differ; likely a spreadsheet copy error in the source. |
+| **Identical columns** | `Z460` = `Z560` and `Z461` = `Z561` in every row. These are interactions of different variable pairs (4×6 and 5×6), so they should differ; likely a copy error in the source. The same two pairs are identical in **all seven district sheets**, so it is systematic in how the workbook was built, not a one-sheet typo. The backtest drops `Z560`/`Z561`. |
 | Cross-district | `Z60` is identical for Hathras and Firozabad in every season (possibly a shared NASA POWER grid cell or a copy); no other unweighted column is shared with any other district |
 
 ## Comparison with ColdFlow's existing data (overlap 2018-19 → 2020-21)
@@ -77,4 +77,25 @@ No alternative year alignment makes them agree (the closest single pair of value
 - Yield only. There is no area or production data, so this dataset can't be converted into production tonnes or merged into ColdFlow's production series.
 - 16 seasons is a short history for 42 weather features (more features than seasons); any model using many Z columns will overfit.
 - The data ends in 2020-21; ColdFlow's series runs to 2023-24.
-- No forecasting improvement from these features has been tested or is claimed.
+- The backtest below found no credible improvement from these features, so no weather model has been added to ColdFlow.
+
+## Chronological backtest: existing models vs weather models
+
+Reproduce with `portal.core.yield_reference.backtest(load(), min_train)`. Each forecast is one season ahead, and for a forecast of season *o* every model is trained on seasons before *o* only. Weather models also use season *o*'s weather indices, which exist once its October–January growing weeks are over (that is, before harvest), but never its yield. Feature choice (the single index most correlated with detrended yield) and the ridge penalty (leave-one-out) are picked **inside each training window**. Target: `yield_t_ha`. MAE is in t/ha.
+
+| Model | MAE, 8 train → 8 tests (2013-14…2020-21) | MAE, 6 → 10 tests | MAE, 10 → 6 tests |
+|---|---|---|---|
+| Linear trend (ColdFlow's current model) | 2.944 | 3.351 | 2.368 |
+| Damped exponential smoothing | 3.089 | 3.686 | 2.535 |
+| Naive (last season) | 3.635 | 3.777 | 2.169 |
+| Drift | 3.987 | 4.092 | 2.394 |
+| Historical mean | **2.486** | **2.771** | 2.253 |
+| Trend + 1 unweighted weather index | 3.930 | 4.175 | 3.462 |
+| Trend + 1 weighted index (leakage-suspect) | 5.408 | 5.238 | 5.957 |
+| Ridge, all unweighted indices | 2.495 | 2.783 | **2.235** |
+
+**Conclusion: no credible improvement, so nothing was integrated.**
+- No weather model is consistently better than the simple baselines. Ridge selected its strongest penalty in every window, so it collapses to roughly the historical mean (2.495 vs 2.486).
+- The rankings change with the window size, and every comparison rests on 6–10 test seasons.
+- The weighted indices did worst. That doesn't rule leakage out; the weights may simply be noisy.
+- Even with a better model, ColdFlow couldn't use it: the indices stop at 2020-21, there are none for the seasons ColdFlow forecasts (2024-25 onward), and ColdFlow forecasts production (needing area as well as yield).

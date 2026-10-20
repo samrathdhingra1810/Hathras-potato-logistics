@@ -10,7 +10,7 @@ from flask import Flask, jsonify, render_template, request
 
 from . import db, security, views_api, views_auth, views_pages
 from .core import dataset as ds
-from .core.analytics import summary
+from .core.analytics import forecast_seasons, summary
 from .formatting import FILTERS
 
 TOOLS = [
@@ -71,6 +71,7 @@ def create_app(test_config: dict | None = None) -> Flask:
             "source": ds.DATA_SOURCE,
             "tools": TOOLS,
             "headline": summary(ds.PRODUCTION_SERIES),
+            "forecast_seasons": forecast_seasons(ds.PRODUCTION_SERIES),
             "year": date.today().year,
             "accounts_enabled": db.accounts_enabled(),
         }

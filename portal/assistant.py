@@ -13,7 +13,7 @@ import time
 from collections import defaultdict, deque
 
 from .core import dataset as ds
-from .core.analytics import compare_models, forecast_series, summary, with_yoy
+from .core.analytics import compare_models, forecast_seasons, forecast_series, summary, with_yoy
 from .core.custom import InputError, analyse
 from .scenario import hathras_scenario
 
@@ -49,7 +49,7 @@ TOOLS = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "season": {"type": "string", "description": "One of 2023-24 (latest actual), 2024-25 or 2025-26 (forecast)."},
+                "season": {"type": "string", "description": f"One of {ds.PRODUCTION_SERIES[-1]['season']} (latest actual), {' or '.join(forecast_seasons(ds.PRODUCTION_SERIES))} (forecast)."},
                 "capacity_t": {"type": "number", "description": "District cold storage capacity in tonnes. Default assumption 950000."},
                 "storage_share": {"type": "number", "description": "Share of harvest stored, 0-1. Default 0.75."},
                 "alert_threshold": {"type": "number", "description": "Utilisation alert threshold, 0.5-1. Default 0.9."},
@@ -387,5 +387,5 @@ def answer_offline(history: list[dict], _ctx=None) -> dict:
                  "month by month and releases it through the year, flagging months where intake exceeds capacity. Full details: [Methodology](/about#methodology).")
     else:
         reply = ("I can answer questions about Hathras production, forecasts and storage capacity, or help you use your own data. Try "
-                 "“Will Hathras run short of storage?” or “What is the 2025-26 forecast?”")
+                 "“Will Hathras run short of storage?” or “What is the " + forecast_seasons(ds.PRODUCTION_SERIES)[-1] + " forecast?”")
     return {"reply": reply + "\n\n_Offline help: the AI assistant isn't connected on this site yet._", "mode": "offline", "tools": []}

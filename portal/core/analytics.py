@@ -75,6 +75,11 @@ def next_season(season: str, k: int = 1) -> str:
     return f"{start}-{(start + 1) % 100:02d}"
 
 
+def forecast_seasons(series: list[dict], horizon: int = 2) -> list[str]:
+    """Labels of the seasons the forecasts cover: the `horizon` seasons after the latest record."""
+    return [next_season(series[-1]["season"], k) for k in range(1, horizon + 1)]
+
+
 def forecast_series(series: list[dict], horizon: int = 2) -> dict:
     """Independent linear trend per metric against the season index."""
     xs = list(range(len(series)))
