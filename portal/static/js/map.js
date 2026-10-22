@@ -115,6 +115,12 @@
     card.querySelector('[data-bind-html="bd-near"]').innerHTML = near.length
       ? near.map(function (n) { return '<li><span>' + esc(n.name) + ' · ' + n.km + ' km</span><strong>' + t(n.headroom_t) + ' spare</strong></li>'; }).join('')
       : '<li><span>No block has spare capacity at this setting.</span></li>';
+    var h = (d.nhb || {})[id];
+    var box = card.querySelector('[data-bind-html="bd-nhb"]');
+    if (box) box.innerHTML = h && h.count
+      ? '<strong>' + h.count + ' record' + (h.count === 1 ? '' : 's') + '</strong>' + (h.years ? ', sanctioned ' + h.years[0] + (h.years[1] !== h.years[0] ? '–' + h.years[1] : '') : '') +
+        (h.cap ? ', ' + Math.round(h.cap).toLocaleString('en-IN') + ' MT at sanction' : '') + ': ' + h.records.map(esc).join(', ')
+      : 'No NHB record names this block in its address.';
   }
 
   function select(id) {

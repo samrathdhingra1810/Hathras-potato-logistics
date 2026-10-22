@@ -75,8 +75,9 @@
           <div class="bd-months" data-bind-html="bd-months"></div>
           <p class="small" style="margin:14px 0 6px"><strong>Nearest blocks with spare space</strong> <span class="xs muted">(straight-line)</span></p>
           <ul class="bd-near" data-bind-html="bd-near"></ul>
-          <p class="small" style="margin:14px 0 6px"><strong>Cold storage facilities</strong></p>
-          <p class="xs muted" style="margin:0">No facility registry is loaded for this block yet. Add the UP Horticulture cold storage list (name, capacity, contact, occupancy) to show individual stores here.</p>
+          <p class="small" style="margin:14px 0 6px"><strong>Historical cold storage records</strong> <span class="tag">NHB {{ nhb.years[0] }}–{{ nhb.years[1] }} · not current</span></p>
+          <div class="xs" data-bind-html="bd-nhb"></div>
+          <p class="xs muted" style="margin:6px 0 0">Projects sanctioned under the NHB subsidy scheme, matched to this block from the address text. Capacity is as sanctioned, not today's capacity, occupancy or available space. No contact details, and nothing here is live.</p>
         </div>
       </div>
       <div class="card">
@@ -103,9 +104,41 @@
     <summary class="card-head" style="cursor:pointer;list-style:none"><div><h3>Distance matrix</h3><p>Straight-line km between block HQs. Road distances are longer.</p></div><span class="xs muted">Show ▾</span></summary>
     <div class="table-wrap"><table class="table" id="dist-table"></table></div>
   </details>
+  {% set FL = {'capacity_implausible': 'capacity as printed looks wrong', 'capacity_missing': 'no capacity in source', 'date_missing': 'no sanction date', 'date_unreadable': 'date unreadable', 'date_implausible': 'date implausible', 'date_day_month_ambiguous': 'day/month order unclear', 'same_name_multiple_records': 'listed more than once (e.g. expansion)', 'duplicate_row': 'duplicate row', 'district_name_normalised': 'old district name (Maha Maya Nagar)'} %}
+  <div class="card" id="nhb-records">
+    <div class="card-head">
+      <div><h3>Historical cold storage projects in Hathras ({{ nhb.count }} records)</h3>
+        <p>{{ nhb_source.publisher }}: projects sanctioned {{ nhb.years[0] }}–{{ nhb.years[1] }}. File dated {{ nhb_source.file_modified }}, retrieved {{ nhb_source.retrieved }}.</p></div>
+      <span class="tag">Historical · not live availability</span>
+    </div>
+    <div class="card-body" style="padding-bottom:0">
+      <p class="small" style="margin:0">Sanctioned capacity across {{ nhb.capacity_records }} records with a usable figure: <strong>{{ nhb.capacity_mt_sanctioned|num }} MT</strong>. These are only projects that received NHB subsidy; other stores and later changes are not included, so this is not the district's capacity and is not used in the storage model. {{ nhb.unassigned|length }} records don't name a block in their address and are listed as "Not identified".</p>
+    </div>
+    <details class="panel">
+      <summary>Show all {{ nhb.count }} records</summary>
+      <div class="table-wrap">
+        <table class="table dense">
+          <thead><tr><th class="r">NHB #</th><th>Name (as printed)</th><th>Block (from address)</th><th>Type</th><th>Sanctioned</th><th class="r">Capacity at sanction (MT)</th><th>Notes</th></tr></thead>
+          <tbody>
+            {% for r in nhb.records %}
+            <tr>
+              <td class="r">{{ r.sr }}</td><td>{{ r.name }}</td>
+              <td>{{ (scenario.blocks|selectattr('id', 'equalto', r.block_hint)|map(attribute='name')|first) if r.block_hint else 'Not identified' }}</td>
+              <td>{{ r.unit_type }}</td><td>{{ r.sanctioned_date or r.sanctioned_raw or '—' }}</td>
+              <td class="r">{{ r.capacity_mt_raw or '—' }}</td>
+              <td class="xs">{% for f in r.flags %}<span class="tag">{{ FL.get(f, f) }}</span> {% endfor %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="xs muted" style="padding:0 20px 14px;margin:0">{{ nhb_source.status }} Values are copied as printed, including obvious errors, which are flagged rather than corrected. Source: <a href="{{ nhb_source.url }}" rel="noopener" target="_blank">{{ nhb_source.url }}</a>. Data: <a href="{{ url_for('api_nhb_cold_storage') }}">/api/sources/nhb-cold-storage</a>.</p>
+    </details>
+  </div>
   <div class="notice">District demand and capacity are split across blocks with modelled shares. Replace them with block-level production and the cold storage registry to make this layer authoritative.</div>
 </div>
-{{ m.page_data({'scenario': s, 'center': district.center, 'distances': distances}) }}
+{% set nhb_js = {} %}{% for bid, v in nhb.by_block.items() %}{% set _ = nhb_js.update({bid: {'count': v.count, 'cap': v.capacity_mt_sanctioned, 'years': v.years, 'records': v.records|map(attribute='name')|list}}) %}{% endfor %}
+{{ m.page_data({'scenario': s, 'center': district.center, 'distances': distances, 'nhb': nhb_js}) }}
 {% endblock %}
 
 {% block scripts %}

@@ -7,6 +7,7 @@ from flask import Response, current_app, g, jsonify, request
 
 from . import assistant, db, sheets
 from .core import dataset as ds
+from .core import external_sources as xs
 from .core.analytics import forecast_series, with_yoy
 from .core.custom import InputError, analyse, validate
 from .core.allocation import allocate
@@ -36,6 +37,21 @@ def init_app(app):
     @app.get("/api/health")
     def api_health():
         return jsonify(ok=True, accounts=db.accounts_enabled())
+
+    @app.get("/api/sources/up-districts")
+    def api_up_districts():
+        """UP district potato production, crop year 2022-23 (secondary source, unverified)."""
+        return jsonify(source=xs.DISTRICT_SOURCE, validation=xs.validate_districts(),
+                       hathras_vs_coldflow=xs.compare_hathras(), rows=list(xs.districts()))
+
+    @app.get("/api/sources/nhb-cold-storage")
+    def api_nhb_cold_storage():
+        """Historical NHB-sanctioned cold storage projects (2000-2012). ?district=Hathras (default) or ?district=all."""
+        want = (request.args.get("district") or "Hathras").strip()
+        rows = [r for r in xs.nhb_projects() if want.lower() == "all" or r["district"].lower() == want.lower()]
+        return jsonify(source=xs.NHB_SOURCE, district=want, count=len(rows),
+                       note="Sanctioned capacity from historical subsidy records, not current capacity or availability.",
+                       rows=rows)
 
     @app.get("/api/baseline")
     def api_baseline():

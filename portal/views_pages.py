@@ -13,6 +13,7 @@ from .core.analytics import compare_models, forecast_series, with_yoy
 from .core.custom import hathras_example
 from .core.geo import distance_matrix
 from .core import districts
+from .core import external_sources as xs
 from .roles import ROLES, workspace_data
 from .scenario import hathras_scenario
 
@@ -37,7 +38,8 @@ def init_app(app):
 
     @app.get("/tools/production")
     def tool_production():
-        return render_template("tools/production.html", series=with_yoy(ds.PRODUCTION_SERIES))
+        return render_template("tools/production.html", series=with_yoy(ds.PRODUCTION_SERIES),
+                               up_districts=xs.districts(), up_source=xs.DISTRICT_SOURCE, hathras_cmp=xs.compare_hathras())
 
     @app.get("/tools/forecast")
     def tool_forecast():
@@ -52,7 +54,7 @@ def init_app(app):
     @app.get("/tools/map")
     def tool_map():
         return render_template("tools/map.html", scenario=hathras_scenario(request.args),
-                               distances=distance_matrix(ds.BLOCKS))
+                               distances=distance_matrix(ds.BLOCKS), nhb=xs.hathras_facilities(), nhb_source=xs.NHB_SOURCE)
 
     @app.get("/plan")
     def plan():

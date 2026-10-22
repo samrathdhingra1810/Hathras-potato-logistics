@@ -80,6 +80,49 @@
     <div class="card card-body"><div class="small muted">Yield growth since {{ headline.first.season }}</div><div style="font-size:1.4rem;font-weight:700" class="tabular">{{ headline.yield_growth|pct(1, True) }}</div></div>
     <div class="card card-body"><div class="small muted">Output CAGR</div><div style="font-size:1.4rem;font-weight:700" class="tabular">{{ headline.cagr|pct(2) }}</div></div>
   </div>
+
+  {# External reference: UP district table, crop year 2022-23. Shown beside, never merged into, ColdFlow's series. #}
+  {% set c = hathras_cmp %}
+  <div class="card" id="up-districts">
+    <div class="card-head">
+      <div><h2>Hathras among Uttar Pradesh districts, crop year {{ up_source.crop_year }}</h2>
+        <p>{{ up_source.publisher }}. Published {{ up_source.published }}, updated {{ up_source.updated }}, retrieved {{ up_source.retrieved }}.</p></div>
+      <span class="tag">Secondary source · unverified</span>
+    </div>
+    {% if c.available %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Hathras, {{ c.season }}</th><th class="r">Area (ha)</th><th class="r">Production (t)</th><th class="r">Yield (t/ha)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>ColdFlow district series</strong><br><span class="xs muted">as supplied to the project</span></td>
+            <td class="r">{{ c.coldflow.area_ha|num }}</td><td class="r">{{ c.coldflow.production_t|num }}</td><td class="r">{{ '%.2f'|format(c.coldflow.yield_t_ha) }}</td></tr>
+          <tr><td><strong>District compilation</strong><br><span class="xs muted">rank {{ c.external.rank }} of {{ up_districts|length }} · {{ c.external.share_pct }}% of UP output</span></td>
+            <td class="r">{{ c.external.area_ha|num }}</td><td class="r">{{ c.external.production_t|num }}</td><td class="r">{{ '%.1f'|format(c.external.yield_t_ha) }}</td></tr>
+          <tr><td class="muted">Difference</td>
+            <td class="r muted">{{ c.difference_pct.area|pct(1, True) }}</td><td class="r muted">{{ c.difference_pct.production|pct(1, True) }}</td><td class="r muted">{{ c.difference_pct.yield|pct(1, True) }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card-body" style="border-top:1px solid var(--line)">
+      <div class="notice"><strong>The two sources disagree.</strong> The compilation's Hathras production is {{ c.difference_pct.production|pct(0, True) }} against ColdFlow's 2022-23 record, mostly through a higher yield. Neither figure has been changed. ColdFlow's forecasts and storage plans still use its own series. Check both against the DES / UP Horticulture district releases before relying on either.</div>
+    </div>
+    {% endif %}
+    <details class="panel">
+      <summary>All {{ up_districts|length }} districts, {{ up_source.crop_year }}</summary>
+      <div class="table-wrap">
+        <table class="table dense">
+          <thead><tr><th class="r">Rank</th><th>District</th><th class="r">Area (ha)</th><th class="r">Production (t)</th><th class="r">Yield (t/ha)</th><th class="r">Share</th></tr></thead>
+          <tbody>
+            {% for r in up_districts %}
+            <tr{% if r.district == 'Hathras' %} style="background:var(--brand-soft)"{% endif %}><td class="r">{{ r.rank }}</td><td>{% if r.district == 'Hathras' %}<strong>{{ r.district }}</strong>{% else %}{{ r.district }}{% endif %}</td>
+              <td class="r">{{ r.area_ha|num }}</td><td class="r">{{ r.production_t|num }}</td><td class="r">{{ r.yield_t_ha }}</td><td class="r">{{ r.share_pct }}%</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="xs muted" style="padding:0 20px 14px;margin:0">{{ up_source.status }} Source: <a href="{{ up_source.url }}" rel="noopener" target="_blank">{{ up_source.url }}</a>. Data: <a href="{{ url_for('api_up_districts') }}">/api/sources/up-districts</a>.</p>
+    </details>
+  </div>
 </div>
 {{ m.page_data({'series': series, 'avgYield': headline.avg_yield_kg_ha}) }}
 {% endblock %}
